@@ -1133,19 +1133,29 @@ function statsBlock(){
     if(r.sun) sun++; star += r.stars;
     CONFIG.slots.forEach(s=>{ if(day.slots[s.id]) slotHit[s.id]++; });
   });
-  const wk = (n/7)||1;
-  return `<table class="rules">
-    <tr><td>情绪失控频率</td><td style="text-align:right;font-weight:800">${(melt/wk).toFixed(1)} 次/周</td></tr>
-    <tr><td>小脾气频率</td><td style="text-align:right;font-weight:800">${(tan/wk).toFixed(1)} 次/周</td></tr>
-    <tr><td>打人频率</td><td style="text-align:right;font-weight:800">${(hit/wk).toFixed(1)} 次/周</td></tr>
-    <tr><td>好日子率</td><td style="text-align:right;font-weight:800">${Math.round(sun/n*100)}%</td></tr>
-    <tr><td>日均星数</td><td style="text-align:right;font-weight:800">${(star/n).toFixed(1)}</td></tr>
+  /* 满 7 天才换算「次/周」。不然 n=1 时一次失控会被外推成 7 次/周 ——
+     而这几个数是用来决定里程碑降不降档的，样本不够就外推，结论必然是错的 */
+  const enough = n >= 7;
+  const rate = c => enough ? ` · ${(c/(n/7)).toFixed(1)} 次/周` : '';
+  const pct  = (c,t) => enough ? ` （${Math.round(c/t*100)}%）` : '';
+  const val  = s => `<td style="text-align:right;font-weight:800">${s}</td>`;
+  return `<div class="muted" style="margin-bottom:12px">
+      共 <b>${n}</b> 天记录（${cnDate(ds[0]).replace(/ 星期./,'')} 起）</div>
+    <table class="rules">
+    <tr><td>情绪失控</td>${val(melt+' 次'+rate(melt))}</tr>
+    <tr><td>小脾气</td>${val(tan+' 次'+rate(tan))}</tr>
+    <tr><td>打人</td>${val(hit+' 次'+rate(hit))}</tr>
+    <tr><td>好日子</td>${val(sun+' / '+n+' 天'+pct(sun,n))}</tr>
+    <tr><td>日均星数</td>${val((star/n).toFixed(1))}</tr>
     </table><hr><table class="rules">
     ${CONFIG.slots.map(s=>`<tr><td>${s.icon} ${esc(s.label)}</td>
-      <td style="text-align:right;font-weight:800">${Math.round(slotHit[s.id]/n*100)}%</td></tr>`).join('')}
+      ${val(slotHit[s.id]+' / '+n+pct(slotHit[s.id],n))}</tr>`).join('')}
     </table>
-    <div class="muted" style="margin-top:10px">
-      某一格连续 21 天满勾 → 该毕业了，换成新目标。
+    <div class="${enough?'muted':'note'}" style="margin-top:12px">
+      ${enough
+        ? '某一格连续 21 天满勾 → 该毕业了，换成新目标。'
+        : `⚠️ 记满 7 天才开始换算百分比和「次/周」。现在只有 ${n} 天，
+           一次事件会被外推成每周 ${(7/n).toFixed(0)} 次，拿它调里程碑一定调错。`}
     </div>`;
 }
 
