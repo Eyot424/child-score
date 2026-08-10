@@ -453,7 +453,7 @@ const FS = {
    这里用：逐天比时间戳 + 流水按 id 取并集 + 乐观并发（rev 对不上就合并后重试），
    两边的修改都不会丢。
    ═══════════════════════════════════════ */
-const PASSKEY = 'jinxi-pass';
+const GITKEY = 'jinxi-git';
 function stamp(){ return new Date().toISOString(); }
 function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
 
@@ -485,64 +485,105 @@ function mergeData(a, b){
   return out;
 }
 
-const Cloud = {
-  usable: location.protocol !== 'file:',   // 本地双击打开时没有 /api，走纯本地
-  pass:null, rev:0, status:'local', err:'', busy:false, again:false,
+/* base64：btoa 直接喂中文会抛 InvalidCharacterError，必须先转 UTF-8 字节。
+   分块是因为数据攒一年后 String.fromCharCode.apply 会爆栈。 */
+function b64enc(str){
+  const b = new TextEncoder().encode(str); let s='';
+  for(let i=0;i<b.length;i+=0x8000) s += String.fromCharCode.apply(null, b.subarray(i,i+0x8000));
+  return btoa(s);
+}
+function b64dec(b64){
+  return new TextDecoder().decode(Uint8Array.from(atob(String(b64).replace(/\s/g,'')), c=>c.charCodeAt(0)));
+}
+
+const GIT = {
+  cfg:null, sha:null, status:'needcfg', err:'', busy:false, again:false,
+
+  load(){ try{ return JSON.parse(localStorage.getItem(GITKEY)||'null'); }catch(e){ return null; } },
+  set(c){ this.cfg=c; this.sha=null; localStorage.setItem(GITKEY, JSON.stringify(c)); },
+  clear(){ localStorage.removeItem(GITKEY); this.cfg=null; this.sha=null; this.status='needcfg'; render(); },
+  ready(){ const c=this.cfg; return !!(c && c.owner && c.repo && c.path && c.token); },
+
+  url(){ const c=this.cfg;
+    return 'https://api.github.com/repos/' + encodeURIComponent(c.owner) + '/' + encodeURIComponent(c.repo)
+         + '/contents/' + c.path.split('/').map(encodeURIComponent).join('/'); },
+  branch(){ return (this.cfg.branch||'master'); },
+  hdr(extra){ return Object.assign({
+    'Authorization':'Bearer ' + this.cfg.token,
+    'Accept':'application/vnd.github+json',
+    'X-GitHub-Api-Version':'2022-11-28'
+  }, extra||{}); },
 
   async init(){
-    if(!this.usable){ this.status='local'; return; }
-    this.pass = localStorage.getItem(PASSKEY) || null;
-    if(!this.pass){ this.status='needpass'; paintStatus(); return; }
+    this.cfg = this.load();
+    if(!this.ready()){ this.status='needcfg'; paintStatus(); return; }
     await this.pull();
     addEventListener('focus', ()=>{ if(this.status==='ok' && !this.busy) this.pull(); });
   },
-  async req(method, body){
-    const r = await fetch('api/data', {
-      method, headers:{'content-type':'application/json','x-pass':this.pass},
-      body: body ? JSON.stringify(body) : undefined
-    });
-    let j={}; try{ j = await r.json(); }catch(e){}
-    return {status:r.status, ok:r.ok, j};
+
+  // 只取回远端那份，不产生副作用；pull 和 push 的冲突重试都用它
+  async remote(){
+    const r = await fetch(this.url()+'?ref='+encodeURIComponent(this.branch())+'&_='+Date.now(),
+                          {headers:this.hdr(), cache:'no-store'});
+    if(r.status===404) return {missing:true};
+    const j = await r.json().catch(()=>({}));
+    if(r.status===401) throw Object.assign(new Error('token 无效'), {auth:true});
+    if(r.status===403) throw Object.assign(new Error(j.message||'token 权限不够，或被限流'), {auth:true});
+    if(!r.ok) throw new Error(j.message || ('HTTP '+r.status));
+    let data = null;
+    const txt = j.content ? b64dec(j.content) : '';
+    if(txt.trim()){ try{ data = JSON.parse(txt); }catch(e){ throw new Error('仓库里那个 json 解析不了'); } }
+    return {sha:j.sha, data};
   },
-  bad(){ localStorage.removeItem(PASSKEY); this.pass=null; this.status='badpass'; paintStatus(); },
+  async write(){
+    const body = {
+      message: '星星 · ' + DB.child.name + ' · ' + new Date().toLocaleString('zh-CN',{hour12:false}),
+      content: b64enc(JSON.stringify(DB, null, 2)),
+      branch: this.branch()
+    };
+    if(this.sha) body.sha = this.sha;              // 没有 sha = 创建新文件
+    const r = await fetch(this.url(), {method:'PUT',
+      headers:this.hdr({'content-type':'application/json'}), body:JSON.stringify(body)});
+    const j = await r.json().catch(()=>({}));
+    return {status:r.status, ok:r.ok, sha:j.content && j.content.sha, msg:j.message};
+  },
 
   async pull(){
-    if(!this.pass) return;
+    if(!this.ready()) return;
     this.status='sync'; paintStatus();
     try{
-      const {status, ok, j} = await this.req('GET');
-      if(status===401) return this.bad();
-      if(!ok) throw new Error(j.error || ('HTTP '+status));
-      this.rev = j.rev || 0;
-      if(j.data){ DB = normalize(mergeData(DB, normalize(j.data))); Local.save(DB); }
+      const rm = await this.remote();
+      if(rm.missing){ this.sha=null; this.status='ok'; render(); this.push(); return; }
+      this.sha = rm.sha;
+      if(rm.data){ DB = normalize(mergeData(DB, normalize(rm.data))); Local.save(DB); }
       this.status='ok'; render();
-      if(!j.data) this.push();          // 云端还是空的，把本机这份推上去
-    }catch(e){ this.status='err'; this.err=e.message; paintStatus(); }
+    }catch(e){ this.status = e.auth?'badauth':'err'; this.err=e.message; paintStatus(); }
   },
   async push(){
-    if(!this.usable || !this.pass) return;
-    if(this.busy){ this.again = true; return; }
+    if(!this.ready()) return;
+    if(this.busy){ this.again=true; return; }
     this.busy=true; this.status='sync'; paintStatus();
     try{
-      let r = await this.req('PUT', {rev:this.rev, data:DB});
-      if(r.status===409){                // 别的设备先提交了：合并后重试一次
-        DB = normalize(mergeData(DB, normalize(r.j.data||{})));
-        this.rev = r.j.rev; Local.save(DB); render();
-        r = await this.req('PUT', {rev:this.rev, data:DB});
+      let r = await this.write();
+      if(r.status===409 || r.status===422){        // sha 过期：别的设备先提交了
+        const rm = await this.remote();
+        if(rm.missing){ this.sha = null; }
+        else{
+          this.sha = rm.sha;
+          if(rm.data){ DB = normalize(mergeData(DB, normalize(rm.data))); Local.save(DB); render(); }
+        }
+        r = await this.write();
       }
-      if(r.status===401){ this.busy=false; return this.bad(); }
-      if(!r.ok) throw new Error(r.j.error || ('HTTP '+r.status));
-      this.rev = r.j.rev; this.status='ok';
+      if(r.status===401 || r.status===403){
+        this.status='badauth'; this.err = r.msg||'token 无效或权限不够';
+        this.busy=false; paintStatus(); return;
+      }
+      if(!r.ok) throw new Error(r.msg || ('HTTP '+r.status));
+      this.sha = r.sha; this.status='ok';
     }catch(e){ this.status='err'; this.err=e.message; }
     this.busy=false; paintStatus();
     if(this.again){ this.again=false; this.push(); }
-  },
-  async setPass(p){
-    p = (p||'').trim(); if(!p) return;
-    this.pass = p; localStorage.setItem(PASSKEY, p);
-    await this.pull();
-  },
-  forget(){ localStorage.removeItem(PASSKEY); this.pass=null; this.status='needpass'; render(); }
+  }
 };
 
 let DB = Local.load() || defaults();
@@ -556,8 +597,8 @@ function save(){
   clearTimeout(fsTimer);
   fsTimer = setTimeout(()=>{ FS.write(DB).then(ok=>{ if(ok) paintStatus(); }); }, 400);
   clearTimeout(cloudTimer);
-  cloudTimer = setTimeout(()=>Cloud.push(), 700);
-  if(!okLocal && !FS.handle && !Cloud.pass) toast('⚠️ 没能保存！请到设置里绑定数据文件');
+  cloudTimer = setTimeout(()=>GIT.push(), 1200);   // GitHub 提交约 1 秒，攒一下再发
+  if(!okLocal && !FS.handle && !GIT.ready()) toast('⚠️ 没能保存！请到设置里绑定数据文件');
   paintStatus();
 }
 
@@ -570,11 +611,18 @@ function blankDay(){
   const s={}; DB.config.slots.forEach(x=>s[x.id]=false);
   return {slots:s, tantrum:false, meltdown:false, hit:false, bonus:0, exempt:false, settled:false};
 }
+/* 只读：看一眼不落库。
+   否则光是翻日历就会给每一天生成空记录，而复盘报表的好日子率、日均星数
+   都是拿 days 的条数当分母 —— 两周后校准里程碑靠的就是这几个数。 */
 function getDay(date){
-  if(!DB.days[date]) DB.days[date] = blankDay();
-  const d = DB.days[date];
+  const d = DB.days[date] || blankDay();
   DB.config.slots.forEach(x=>{ if(!(x.id in d.slots)) d.slots[x.id]=false; });
   return d;
+}
+/* 要改的时候才真的落库 */
+function editDay(date){
+  if(!DB.days[date]) DB.days[date] = getDay(date);
+  return DB.days[date];
 }
 function settleDay(day){
   const on = DB.config.penaltyEnabled;
@@ -625,28 +673,21 @@ function render(){
   applyBg(); paintStatus();
 }
 /* 数据存哪儿了 —— 永远让用户看得见 */
-const passBox = (btn, ph) => `<span class="g">
-  <input type="password" id="passIn" placeholder="${ph}" style="width:150px"
-    onkeydown="if(event.key==='Enter')Cloud.setPass(this.value)">
-  <button class="btn sm primary" onclick="Cloud.setPass(el('passIn').value)">${btn}</button></span>`;
-
 function paintStatus(){
   const b = el('banner'); if(!b) return;
-  if(document.activeElement && document.activeElement.id === 'passIn') return;   // 别把正在输的密码刷掉
   const t = DB.meta?.savedAt ? new Date(DB.meta.savedAt).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'}) : '—';
 
-  if(Cloud.usable){
-    if(Cloud.status==='needpass'){
-      b.innerHTML = `<div class="bnr warn">🔑 输入家庭密码，数据就能在所有设备之间同步${passBox('连上','家庭密码')}</div>`; return; }
-    if(Cloud.status==='badpass'){
-      b.innerHTML = `<div class="bnr bad">🔑 密码不对，再试一次${passBox('重试','家庭密码')}</div>`; return; }
-    if(Cloud.status==='sync'){
-      b.innerHTML = `<div class="bnr ok">🔄 同步中…</div>`; return; }
-    if(Cloud.status==='ok'){
-      b.innerHTML = `<div class="bnr ok">☁️ 已同步 · 上次保存 ${t} · 手机和电脑是同一份数据</div>`; return; }
-    if(Cloud.status==='err'){
-      b.innerHTML = `<div class="bnr bad">📡 云端连不上（${esc(Cloud.err)}）—— 改动先存在本机，恢复后自动补传
-        <span class="g"><button class="btn sm primary" onclick="Cloud.push()">立即重试</button></span></div>`; return; }
+  if(GIT.ready() || GIT.status==='badauth'){
+    if(GIT.status==='sync'){
+      b.innerHTML = `<div class="bnr ok">🔄 正在提交到 GitHub…</div>`; return; }
+    if(GIT.status==='ok'){
+      b.innerHTML = `<div class="bnr ok">🐙 已同步到 ${esc(GIT.cfg.owner)}/${esc(GIT.cfg.repo)} · 上次保存 ${t} · 所有设备是同一份数据</div>`; return; }
+    if(GIT.status==='badauth'){
+      b.innerHTML = `<div class="bnr bad">🔑 token 有问题：${esc(GIT.err)}
+        <span class="g"><button class="btn sm primary" onclick="go('set')">去改</button></span></div>`; return; }
+    if(GIT.status==='err'){
+      b.innerHTML = `<div class="bnr bad">📡 连不上 GitHub（${esc(GIT.err)}）—— 改动先存在本机，恢复后自动补传
+        <span class="g"><button class="btn sm primary" onclick="GIT.push()">立即重试</button></span></div>`; return; }
   }
 
   if(DB.meta?.needsGrant){
@@ -660,8 +701,8 @@ function paintStatus(){
   }else{
     b.innerHTML = `<div class="bnr warn">⚠️ 数据只存在浏览器里，清理浏览数据就会丢
       <span class="g">
-        <button class="btn sm primary" onclick="FS.bind()">存到文件（推荐）</button>
-        <button class="btn sm ghost" onclick="FS.open()">打开已有文件</button>
+        <button class="btn sm primary" onclick="go('set')">🐙 同步到 GitHub</button>
+        <button class="btn sm ghost" onclick="FS.bind()">存到本地文件</button>
       </span></div>`;
   }
 }
@@ -755,7 +796,7 @@ function shiftDay(n){
 function jumpToday(){ ST.sel = todayStr(); render(); }
 function toggleSlot(id){
   if(ST.sel > todayStr()) return;
-  const day = getDay(ST.sel);
+  const day = editDay(ST.sel);
   const before = milestoneState().map(m=>m.earned);
   day.slots[id] = !day.slots[id];
   day.settled = true; day.at = stamp();
@@ -763,7 +804,7 @@ function toggleSlot(id){
   checkUnlock(before);
 }
 function tog(f){
-  const day = getDay(ST.sel);
+  const day = editDay(ST.sel);
   const before = milestoneState().map(m=>m.earned);
   day[f] = !day[f];
   // 小脾气 = 「管好脾气」拿不到，勾上时自动同步那一格
@@ -773,7 +814,7 @@ function tog(f){
   checkUnlock(before);
 }
 function bonus(n){
-  const day = getDay(ST.sel);
+  const day = editDay(ST.sel);
   day.bonus = Math.max(0,(day.bonus||0)+n);
   day.at = stamp();
   save(); render();
@@ -1035,11 +1076,11 @@ function vSet(){
   <div class="card">
     <h2>数据存在哪</h2>
     <table class="rules" style="margin-bottom:16px">
-      <tr><td>云端同步</td><td style="text-align:right;font-weight:800">
-        ${!Cloud.usable ? '— 本地打开时不启用'
-          : Cloud.status==='ok' ? `✅ 已连上（版本 ${Cloud.rev}）`
-          : Cloud.status==='err' ? '⚠️ 连不上：'+esc(Cloud.err)
-          : '🔑 还没输密码'}</td></tr>
+      <tr><td>GitHub 同步</td><td style="text-align:right;font-weight:800">
+        ${GIT.status==='ok' ? '✅ 已连上'
+          : GIT.status==='badauth' ? '🔑 token 有问题：'+esc(GIT.err)
+          : GIT.status==='err' ? '⚠️ 连不上：'+esc(GIT.err)
+          : '❌ 没配置'}</td></tr>
       <tr><td>数据文件（备份用）</td><td style="text-align:right;font-weight:800">
         ${FS.handle ? '✅ '+esc(FS.name) : '❌ 没绑定'}</td></tr>
       <tr><td>浏览器存储</td><td style="text-align:right;font-weight:800">
@@ -1048,16 +1089,33 @@ function vSet(){
         ${DB.meta?.savedAt ? new Date(DB.meta.savedAt).toLocaleString('zh-CN') : '—'}</td></tr>
       <tr><td>已记录</td><td style="text-align:right;font-weight:800">${Object.keys(DB.days).length} 天</td></tr>
     </table>
-    ${Cloud.usable?`<div class="row" style="margin-bottom:14px">
-      <button class="btn ghost" onclick="Cloud.pull()">🔄 立即同步</button>
-      ${Cloud.pass?'<button class="btn ghost" onclick="Cloud.forget()">换密码 / 退出</button>':''}
+    <h2 style="font-size:17px;margin-top:20px">🐙 同步到 GitHub</h2>
+    <div class="muted" style="margin-bottom:14px">
+      数据存成仓库里的一个 json，每次改动提交一次。任何设备打开都是同一份，
+      而且白得一份完整的修改历史。填法见 <b>SYNC.md</b>。
     </div>
-    <div class="muted" style="margin-bottom:16px">
-      云端是唯一的真相：任何设备上的改动都会合并进同一份数据。
-      同一天在两台设备上改，取时间戳新的那份；兑换流水按 id 取并集，两边都不会丢。
-    </div><hr>`:''}
+    <div class="field"><label>GitHub 用户名</label>
+      <input type="text" class="lbl" id="gOwner" value="${esc(GIT.cfg?.owner||'')}" placeholder="yogix"></div>
+    <div class="field"><label>仓库名</label>
+      <input type="text" class="lbl" id="gRepo" value="${esc(GIT.cfg?.repo||'')}" placeholder="child-score"></div>
+    <div class="field"><label>分支</label>
+      <input type="text" class="lbl" id="gBranch" value="${esc(GIT.cfg?.branch||'master')}"></div>
+    <div class="field"><label>文件路径</label>
+      <input type="text" class="lbl" id="gPath" value="${esc(GIT.cfg?.path||'data/stars.json')}"></div>
+    <div class="field"><label>Token</label>
+      <input type="password" class="lbl" id="gToken" placeholder="${GIT.cfg?.token?'（已保存，要换才填）':'ghp_… 或 github_pat_…'}">
+      <span class="muted">细粒度 token，只勾 Contents: Read and write，仓库只选这一个</span></div>
     <div class="row">
-      <button class="btn ${Cloud.usable?'ghost':'primary'}" onclick="FS.bind()" ${FS.supported?'':'disabled'}>
+      <button class="btn primary" onclick="saveGit()">保存并连接</button>
+      ${GIT.ready()?'<button class="btn ghost" onclick="GIT.pull()">🔄 立即同步</button>':''}
+      ${GIT.cfg?'<button class="btn ghost" onclick="GIT.clear()">断开</button>':''}
+    </div>
+    <div class="muted" style="margin-top:12px">
+      同一天在两台设备上改，取时间戳新的那份；兑换流水按 id 取并集 —— 两边的改动都不会丢。
+    </div>
+    <hr>
+    <div class="row">
+      <button class="btn ${GIT.ready()?'ghost':'primary'}" onclick="FS.bind()" ${FS.supported?'':'disabled'}>
         ${FS.handle?'换一个数据文件':'💾 存到本地文件'}</button>
       <button class="btn ghost" onclick="FS.open()" ${FS.supported?'':'disabled'}>📂 打开已有文件</button>
     </div>
@@ -1114,6 +1172,17 @@ function setCfg(k,v){ DB.config[k]=v; save(); render(); }
 function setSlot(i,k,v){ DB.config.slots[i][k]=v; save(); render(); }
 function setRw(i,k,v){ DB.config.starRewards[i][k]=v; save(); render(); }
 function setSw(i,k,v){ DB.config.sunRewards[i][k]=v; save(); render(); }
+function saveGit(){
+  const c = {
+    owner : el('gOwner').value.trim(),
+    repo  : el('gRepo').value.trim(),
+    branch: el('gBranch').value.trim() || 'master',
+    path   : el('gPath').value.trim()  || 'data/stars.json',
+    token : el('gToken').value.trim()  || GIT.cfg?.token || ''
+  };
+  if(!c.owner || !c.repo || !c.token){ toast('用户名、仓库名、token 都要填'); return; }
+  GIT.set(c); GIT.pull();
+}
 function setMs(i,k,v){ DB.config.milestones[i][k]=v; save(); render(); }
 
 /* ── 背景图（压缩后存本地） ── */
@@ -1192,7 +1261,7 @@ function celebrate(icon, t1, t2){
 (async function init(){
   render();                     // 先用 localStorage 的镜像把页面点亮
   await FS.restore();           // 再连磁盘文件，两边取新的那份
-  await Cloud.init();           // 最后连云端，合并成同一份
+  await GIT.init();             // 最后连 GitHub，合并成同一份
 
   // 关页面前把最后一次改动落盘
   window.addEventListener('beforeunload', ()=>{ Local.save(DB); });
