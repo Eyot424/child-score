@@ -6,9 +6,9 @@
 <title>徐瑾熙的星星</title>
 <style>
 :root{
-  --blue:#00A0E9; --blue-d:#0077B6; --blue-l:#7FD0F5;
+  --blue:#00A0E9; --blue-d:#0077B6;
   --red:#E60012; --yellow:#FFD900; --pink:#F19EC2;
-  --ink:#1A1A1A; --paper:#FFFFFF; --bg:#EAF6FE;
+  --ink:#1A1A1A; --bg:#EAF6FE;
   --gray:#B9C6CE; --gray-l:#F0F4F7;
   --shadow:0 4px 0 var(--ink);
 }
@@ -19,17 +19,11 @@ body{
   color:var(--ink); background:var(--bg);
   -webkit-font-smoothing:antialiased;
 }
-/* ── 背景层 ── */
-#bgLayer{
-  position:fixed; inset:0; z-index:-2;
-  background-color:var(--bg);
-  background-size:cover; background-position:center;
-}
+/* ── 背景：铃铛底纹 ── */
 #bgPattern{
-  position:fixed; inset:0; z-index:-1; pointer-events:none;
+  position:fixed; inset:0; z-index:-1; pointer-events:none; background-color:var(--bg);
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140' viewBox='0 0 140 140'%3E%3Cg fill='none' stroke='%2300A0E9' stroke-opacity='.16' stroke-width='2.5'%3E%3Ccircle cx='30' cy='30' r='11'/%3E%3Cpath d='M19 27h22M30 41v7'/%3E%3Ccircle cx='30' cy='50' r='3'/%3E%3Ccircle cx='100' cy='95' r='11'/%3E%3Cpath d='M89 92h22M100 106v7'/%3E%3Ccircle cx='100' cy='115' r='3'/%3E%3C/g%3E%3Cg fill='%2300A0E9' fill-opacity='.10'%3E%3Ccircle cx='105' cy='25' r='5'/%3E%3Ccircle cx='25' cy='105' r='5'/%3E%3Ccircle cx='70' cy='68' r='3.5'/%3E%3C/g%3E%3C/svg%3E");
 }
-#bgVeil{position:fixed;inset:0;z-index:-1;background:#fff;opacity:0;pointer-events:none}
 
 /* ── 骨架 ── */
 .wrap{max-width:1180px;margin:0 auto;padding:0 24px 60px}
@@ -77,10 +71,8 @@ nav button.on{background:var(--yellow)}
 .btn:active:not(:disabled){transform:translateY(4px);box-shadow:none}
 .btn:disabled{opacity:.4;cursor:not-allowed;box-shadow:0 4px 0 var(--gray);border-color:var(--gray)}
 .btn.primary{background:var(--yellow)}
-.btn.blue{background:var(--blue);color:#fff}
 .btn.sm{font-size:13px;padding:7px 14px;border-width:2px;box-shadow:0 3px 0 var(--ink)}
 .btn.ghost{background:var(--gray-l);font-weight:700}
-.btn.danger{background:var(--red);color:#fff}
 
 /* ── 今日格子 ── */
 .slots{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
@@ -187,14 +179,13 @@ nav button.on{background:var(--yellow)}
 /* ── 设置 ── */
 .field{display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap}
 .field label{font-size:14px;font-weight:700;min-width:150px}
-input[type=text],input[type=number],input[type=date]{
-  font:inherit;font-size:15px;padding:8px 12px;border:2px solid var(--gray);
+/* 现在只剩 token 一个输入框（type=password），别再按 type 挑选择器 */
+input{
+  font:inherit;font-size:15px;padding:9px 12px;border:2px solid var(--gray);
   border-radius:10px;background:#fff;
 }
-input[type=text]:focus,input[type=number]:focus{outline:none;border-color:var(--blue)}
-input.ic{width:64px;text-align:center;font-size:20px}
-input.lbl{width:170px}
-input.num{width:92px}
+input:focus{outline:none;border-color:var(--blue)}
+input.lbl{width:230px}
 hr{border:none;border-top:2px dashed var(--gray-l);margin:22px 0}
 table.rules{width:100%;border-collapse:collapse;font-size:14px}
 table.rules td{padding:6px 8px;border-bottom:1px solid var(--gray-l)}
@@ -217,7 +208,6 @@ table.rules td{padding:6px 8px;border-bottom:1px solid var(--gray-l)}
 #celeb .t2{font-size:18px;font-weight:700;opacity:.9}
 @keyframes pop{from{opacity:0}to{opacity:1}}
 @keyframes spin{from{transform:rotate(-25deg) scale(.3)}to{transform:rotate(0) scale(1)}}
-.hidden{display:none !important}
 /* 手机上把小按钮的触控目标撑到 44px 以上 */
 @media(max-width:560px){
   .btn.sm{padding:11px 18px;font-size:14px}
@@ -253,7 +243,7 @@ table.rules td{padding:6px 8px;border-bottom:1px solid var(--gray-l)}
 </style>
 </head>
 <body>
-<div id="bgLayer"></div><div id="bgPattern"></div><div id="bgVeil"></div>
+<div id="bgPattern"></div>
 
 <header>
   <div class="hd">
@@ -298,10 +288,8 @@ const VIEWS = [
 const KEY = 'jinxi-stars-v1';
 
 function defaults(){
-  const today = fmtDate(new Date());
   return {
-    version:1,
-    child:{ name:'徐瑾熙', startDate:today },
+    child:{ name:'徐瑾熙' },
     config:{
       slots:[
         {id:'teeth', label:'刷牙',        icon:'🪥'},
@@ -328,7 +316,6 @@ function defaults(){
     days:{},
     ledger:[],
     fulfilled:{toy:0, park:0, trip:0},
-    ui:{ bg:null, veil:0 },
     meta:{ savedAt:null }
   };
 }
@@ -355,9 +342,6 @@ function cnDate(s){
    ═══════════════════════════════════ */
 function normalize(d){
   const base = defaults();
-  // 清掉已废弃的字段：基线期和免检卡都删了，别让老数据把它们带回来
-  if(d.config){ delete d.config.penaltyEnabled; delete d.config.baselineEndDate; }
-  if(d.days) Object.values(d.days).forEach(r=>{ if(r) delete r.exempt; });
   // 迁移：零食从「星星换」移到「太阳换」，避免两张表出现同名项
   if(d.config && Array.isArray(d.config.starRewards)){
     const kept = d.config.starRewards.filter(r=>r.id!=='snack');
@@ -369,10 +353,9 @@ function normalize(d){
     if(!e.at) e.at = (e.date||'1970-01-01') + 'T12:00:00.000Z';
   });
   return Object.assign(base, d, {
-    config: Object.assign(base.config, d.config||{}),
-    ui:     Object.assign(base.ui,     d.ui||{}),
+    config:    Object.assign(base.config,    d.config||{}),
     fulfilled: Object.assign(base.fulfilled, d.fulfilled||{}),
-    meta:   Object.assign(base.meta,   d.meta||{})
+    meta:      Object.assign(base.meta,      d.meta||{})
   });
 }
 const Local = {
@@ -566,7 +549,7 @@ function save(){
    ═════════════════════════════════════ */
 function blankDay(){
   const s={}; DB.config.slots.forEach(x=>s[x.id]=false);
-  return {slots:s, tantrum:false, meltdown:false, hit:false, bonus:0, settled:false};
+  return {slots:s, tantrum:false, meltdown:false, hit:false, bonus:0};
 }
 /* 只读：看一眼不落库。
    否则光是翻日历就会给每一天生成空记录，而复盘报表的好日子率、日均星数
@@ -625,7 +608,7 @@ function render(){
     `<button class="${ST.view===v.id?'on':''}" onclick="go('${v.id}')">${v.name}</button>`).join('');
 
   ({today:vToday, cal:vCal, album:vAlbum, shop:vShop, set:vSet})[ST.view]();
-  applyBg(); paintStatus();
+  paintStatus();
 }
 /* 数据存哪儿了 —— 永远让用户看得见。同步只有 GitHub 一条路，不给选项 */
 const tokenBox = btn => `<span class="g">
@@ -747,7 +730,7 @@ function toggleSlot(id){
   const day = editDay(ST.sel);
   const before = milestoneState().map(m=>m.earned);
   day.slots[id] = !day.slots[id];
-  day.settled = true; day.at = stamp();
+  day.at = stamp();
   save(); render();
   checkUnlock(before);
 }
@@ -1009,13 +992,6 @@ function statsBlock(){
     <div class="muted" style="margin-top:10px">
       某一格连续 21 天满勾 → 该毕业了，换成新目标。
     </div>`;
-}
-
-/* 背景图：没有上传界面了，但 DB.ui.bg 里有值就用（要换背景直接改代码） */
-function applyBg(){
-  el('bgLayer').style.backgroundImage = DB.ui.bg ? `url(${DB.ui.bg})` : '';
-  el('bgVeil').style.opacity = DB.ui.bg ? (DB.ui.veil||0) : 0;
-  el('bgPattern').style.opacity = DB.ui.bg ? 0.25 : 1;
 }
 
 /* 导出 / 导入 / 清空都去掉了 ——
