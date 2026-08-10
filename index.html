@@ -255,6 +255,46 @@ table.rules td{padding:6px 8px;border-bottom:1px solid var(--gray-l)}
   .cal .dow{font-size:11px}
   .item{max-width:none}
 }
+/* ── 窄长屏（折叠机外屏一类，20:9 往上）──
+   这类屏横向紧、纵向富余，但 header / 横幅 / nav 一换行就吃掉 400+px，
+   比录入内容本身还多，导致记一天要滚屏。这里把它们压到各自一行。 */
+@media(max-width:480px){
+  header{padding:9px 0;margin-bottom:14px;border-bottom-width:3px}
+  .hd{padding:0 14px;gap:10px;flex-wrap:nowrap}
+  .brand{font-size:18px;gap:8px;min-width:0}
+  .brand span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .bell{width:26px;height:26px}
+  .totals{gap:7px;flex:none}
+  .chip{font-size:15px;padding:4px 11px;border-width:2px;gap:4px}
+
+  nav{gap:6px;margin-bottom:14px;flex-wrap:nowrap}
+  nav button{padding:13px 0;font-size:13px;border-width:2px;flex:1 1 0;min-width:0}
+
+  .bnr{padding:11px 14px;gap:9px;border-width:2px;font-size:14px}
+  .bnr.ok{font-size:13px}
+
+  .card{margin-bottom:14px}
+  .grid2 > div{gap:14px}
+  .slot{padding:13px 6px 11px}
+  .slot .ic{font-size:34px}
+  .slot .nm{margin-top:6px;font-size:14px}
+  .tally{padding:11px;margin:12px 0}
+  .tally .big{font-size:34px}
+  .tally .sun{font-size:16px;margin-top:3px}
+  .card h2{font-size:18px;margin-bottom:12px}
+}
+/* 更窄的那一档（外屏在 DPR 3.0 下约 373px）：文案换行更多，格子更高，
+   还得再挤出几十像素才能一屏记完 */
+@media(max-width:400px){
+  .slots{gap:10px}
+  .slot{padding:11px 5px 9px}
+  .slot .ic{font-size:31px}
+  .slot .nm{margin-top:5px;font-size:13px}
+  .tally{padding:9px;margin:10px 0}
+  .tally .big{font-size:30px}
+  .pen{gap:8px}
+  .pen button{padding:12px 12px;font-size:13px}
+}
 /* ── 存储状态横幅 ── */
 .bnr{
   border:3px solid var(--ink);border-radius:16px;padding:14px 20px;margin-bottom:20px;
@@ -278,7 +318,7 @@ table.rules td{padding:6px 8px;border-bottom:1px solid var(--gray-l)}
         <path d="M20 25v6" stroke="#1A1A1A" stroke-width="2.5" stroke-linecap="round"/>
         <circle cx="20" cy="33" r="3.5" fill="#1A1A1A"/>
       </svg>
-      <span id="brandName">徐瑾熙的星星</span>
+      <span id="brandName"></span>
     </div>
     <div class="totals">
       <div class="chip">⭐ <span id="tStars">0</span></div>
