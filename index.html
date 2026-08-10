@@ -140,6 +140,9 @@ nav button.on{background:var(--yellow)}
 .cal .cell .d{font-size:13px;font-weight:700;color:#74838f}
 .cal .cell .m{font-size:27px;line-height:1}
 .cal .cell .s{font-size:14px;font-weight:800;color:var(--blue-d)}
+/* 扣分标记：不管扣分生不生效都要显示，否则基线期记的东西看不见 */
+.cal .cell .p{position:absolute;top:3px;right:4px;font-size:13px;line-height:1}
+.cal .cell.pen{border-color:var(--pink)}
 
 /* ── 收集册 ── */
 /* 同样限宽：不限的话 60 格铺满会有 800px 高，孩子要滚半天 */
@@ -771,20 +774,24 @@ function vCal(){
   let cells='', sun=0, star=0, n=0;
 
   for(let i=0;i<pad;i++) cells += '<div class="cell pad"></div>';
+  let penDays = 0;
   for(let d=1; d<=days; d++){
     const ds = fmtDate(new Date(y,m,d));
     const rec = DB.days[ds];
     const fut = ds > td;
-    let mark='<span class="d">'+d+'</span>';
+    let mark='<span class="d">'+d+'</span>', pen='';
     if(rec){
       const r = settleDay(rec);
       star += r.stars; n++;
       if(r.sun){ sun++; mark = '<span class="d">'+d+'</span><span class="m">☀️</span>'; }
       else if(rec.hit) mark = '<span class="d">'+d+'</span><span class="m">💧</span>';
       else if(r.stars) mark = '<span class="d">'+d+'</span><span class="s">'+r.stars+'⭐</span>';
+      // 扣分标记独立于「扣分是否生效」—— 基线期记下的东西也必须看得见
+      const icon = rec.hit ? '✋' : rec.meltdown ? '😭' : rec.tantrum ? '😤' : '';
+      if(icon){ pen = '<span class="p">'+icon+'</span>'; penDays++; }
     }
-    cells += `<div class="cell ${ds===td?'today':''} ${fut?'fut':''}"
-      ${fut?'':`onclick="pick('${ds}')"`}>${mark}</div>`;
+    cells += `<div class="cell ${ds===td?'today':''} ${fut?'fut':''} ${pen?'pen':''}"
+      ${fut?'':`onclick="pick('${ds}')"`}>${mark}${pen}</div>`;
   }
 
   el('main').innerHTML = `
@@ -801,7 +808,8 @@ function vCal(){
     <div class="row" style="margin-top:18px;justify-content:center">
       <div class="chip" style="font-size:15px">本月 ☀️ ${sun}</div>
       <div class="chip" style="font-size:15px">日均 ⭐ ${n?(star/n).toFixed(1):'0.0'}</div>
-      <span class="muted">点任意日期可以补录或修改</span>
+      ${penDays?`<div class="chip" style="font-size:15px">扣分 ${penDays} 天</div>`:''}
+      <span class="muted">😤 小脾气 · 😭 情绪失控 · ✋ 打人　（点任意日期可补录或修改）</span>
     </div>
   </div>
 
