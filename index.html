@@ -139,12 +139,13 @@ nav button.on{background:var(--yellow)}
 .cal .cell .s{font-size:12px;font-weight:800;color:var(--blue-d)}
 
 /* ── 收集册 ── */
-.album{display:grid;grid-template-columns:repeat(10,1fr);gap:9px}
+.album{display:grid;grid-template-columns:repeat(10,1fr);column-gap:9px;row-gap:26px}
 @media(max-width:700px){.album{grid-template-columns:repeat(5,1fr)}}
 .acell{
   aspect-ratio:1;border-radius:50%;border:3px solid var(--gray);
   background:var(--gray-l);display:flex;align-items:center;justify-content:center;
   font-size:22px;position:relative;transition:.14s;
+  min-width:0;                      /* grid 项目默认 min-width:auto，会被内容撑破容器 */
 }
 .acell.full{background:#FFF3C4;border-color:var(--ink)}
 .acell.prize{border-color:var(--pink);border-width:4px;background:#FFF0F6}
@@ -202,6 +203,22 @@ table.rules td{padding:6px 8px;border-bottom:1px solid var(--gray-l)}
 @keyframes pop{from{opacity:0}to{opacity:1}}
 @keyframes spin{from{transform:rotate(-25deg) scale(.3)}to{transform:rotate(0) scale(1)}}
 .hidden{display:none !important}
+/* 手机上把小按钮的触控目标撑到 44px 以上 */
+@media(max-width:560px){
+  .btn.sm{padding:11px 18px;font-size:14px}
+  nav button{padding:12px 20px}
+  .pen button{padding:13px 18px;font-size:15px}
+  .field label{min-width:100%}
+  input[type=text],input[type=number],input[type=date]{padding:11px 12px}
+  input.lbl{width:100%}
+  .album{column-gap:6px;row-gap:22px}
+  .acell{font-size:15px;border-width:2px}
+  .acell.prize{border-width:3px}
+  .acell .n{font-size:9px;bottom:-15px}
+  .card{padding:16px}
+  .wrap{padding:0 14px 50px}
+  .goal{font-size:17px;padding:13px 14px}
+}
 /* ── 存储状态横幅 ── */
 .bnr{
   border:3px solid var(--ink);border-radius:16px;padding:14px 20px;margin-bottom:20px;
