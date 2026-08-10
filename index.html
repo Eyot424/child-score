@@ -354,6 +354,8 @@ const KEY = 'jinxi-stars-v1';
 /* ── 规则：只活在代码里，不进数据 ──
    放进数据的话，同步回来的旧配置会盖掉新代码，改文案永远不生效。 */
 const CHILD = '徐瑾熙';
+/* 系统启用日：这天之前不存在记录，也不允许补录 */
+const START = '2026-08-10';
 const CONFIG = {
   slots:[
     {id:'teeth', label:'早晚刷牙',         icon:'🪥'},
@@ -418,6 +420,7 @@ function normalize(d){
   if(d.days && typeof d.days === 'object'){
     for(const [date, rec] of Object.entries(d.days)){
       if(!rec || typeof rec !== 'object') continue;
+      if(date < START) continue;                 // 启用日之前的记录一律丢弃
       const day = blankDay();
       if(rec.slots) CONFIG.slots.forEach(s=>{ day.slots[s.id] = !!rec.slots[s.id]; });
       day.tantrum  = !!rec.tantrum;
@@ -642,6 +645,8 @@ function getDay(date){
   CONFIG.slots.forEach(x=>{ if(!(x.id in d.slots)) d.slots[x.id]=false; });
   return d;
 }
+/* 可编辑区间：启用日 ~ 今天 */
+function editable(date){ return date >= START && date <= todayStr(); }
 /* 要改的时候才真的落库 */
 function editDay(date){
   if(!DB.days[date]) DB.days[date] = getDay(date);
@@ -739,22 +744,23 @@ function esc(s){ return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;',
 function vToday(){
   const date = ST.sel, day = getDay(date), r = settleDay(day);
   const isToday = date === todayStr();
-  const future  = date > todayStr();
+  const lock    = !editable(date);          // 启用日之前 / 未来，都不能改
+  const atStart = date <= START;
 
   el('main').innerHTML = `
   <div class="grid2">
     <div>
       <div class="card">
         <h2>
-          <button class="btn sm ghost" onclick="shiftDay(-1)">◀</button>
+          <button class="btn sm ghost" onclick="shiftDay(-1)" ${atStart?'disabled':''}>◀</button>
           <span style="flex:1;text-align:center">${cnDate(date)}${isToday?' · 今天':''}</span>
-          <button class="btn sm ghost" onclick="shiftDay(1)" ${future?'disabled':''}>▶</button>
+          <button class="btn sm ghost" onclick="shiftDay(1)" ${date>=todayStr()?'disabled':''}>▶</button>
           ${isToday?'':'<button class="btn sm" onclick="jumpToday()">回到今天</button>'}
         </h2>
 
         <div class="slots">
           ${CONFIG.slots.map(s=>`
-            <div class="slot ${day.slots[s.id]?'on':''} ${future?'dis':''}" onclick="toggleSlot('${s.id}')">
+            <div class="slot ${day.slots[s.id]?'on':''} ${lock?'dis':''}" onclick="toggleSlot('${s.id}')">
               <div class="tick">⭐</div>
               <div class="ic">${s.icon}</div>
               <div class="nm">${esc(s.label)}</div>
@@ -768,10 +774,13 @@ function vToday(){
 
         <h2 style="font-size:16px">今天发生了</h2>
         <div class="pen">
-          <button class="${day.tantrum?'on':''}"  onclick="tog('tantrum')">😤 小脾气</button>
-          <button class="${day.meltdown?'on':''}" onclick="tog('meltdown')">😭 情绪失控</button>
-          <button class="${day.hit?'on':''}"      onclick="tog('hit')">✋ 打人</button>
+          <button class="${day.tantrum?'on':''}"  onclick="tog('tantrum')"  ${lock?'disabled':''}>😤 小脾气</button>
+          <button class="${day.meltdown?'on':''}" onclick="tog('meltdown')" ${lock?'disabled':''}>😭 情绪失控</button>
+          <button class="${day.hit?'on':''}"      onclick="tog('hit')"      ${lock?'disabled':''}>✋ 打人</button>
         </div>
+        ${lock ? `<div class="muted" style="margin-top:12px">🔒 ${
+          date < START ? cnDate(START)+' 才开始用这套系统，之前的日子不记录'
+                       : '还没到这一天'}</div>` : ''}
       </div>
     </div>
 
@@ -830,12 +839,13 @@ function nextGoalCard(){
 }
 function shiftDay(n){
   const d = parseDate(ST.sel); d.setDate(d.getDate()+n);
-  const s = fmtDate(d); if(s > todayStr()) return;
+  const s = fmtDate(d);
+  if(s > todayStr() || s < START) return;
   ST.sel = s; render();
 }
 function jumpToday(){ ST.sel = todayStr(); render(); }
 function toggleSlot(id){
-  if(ST.sel > todayStr()) return;
+  if(!editable(ST.sel)) return;
   const day = editDay(ST.sel);
   const before = milestoneState().map(m=>m.earned);
   day.slots[id] = !day.slots[id];
@@ -844,6 +854,7 @@ function toggleSlot(id){
   checkUnlock(before);
 }
 function tog(f){
+  if(!editable(ST.sel)) return;
   const day = editDay(ST.sel);
   const before = milestoneState().map(m=>m.earned);
   day[f] = !day[f];
@@ -854,6 +865,7 @@ function tog(f){
   checkUnlock(before);
 }
 function bonus(n){
+  if(!editable(ST.sel)) return;
   const day = editDay(ST.sel);
   const before = milestoneState().map(m=>m.earned);
   day.bonus = Math.max(0,(day.bonus||0)+n);
@@ -862,6 +874,7 @@ function bonus(n){
   checkUnlock(before);            // 加星可能把当天推过门槛 → 得太阳 → 解锁里程碑
 }
 function bonusSun(){
+  if(!editable(ST.sel)) return;
   const day = editDay(ST.sel);
   if(!day.bonusSun && weekBonusSuns(ST.sel) >= 1){ toast('本周已经给过惊喜太阳了'); return; }
   const before = milestoneState().map(m=>m.earned);
@@ -890,7 +903,7 @@ function vCal(){
   for(let d=1; d<=days; d++){
     const ds = fmtDate(new Date(y,m,d));
     const rec = DB.days[ds];
-    const fut = ds > td;
+    const off = ds > td || ds < START;          // 未来 / 启用日之前，都点不动
     let mark='<span class="d">'+d+'</span>', pen='';
     if(rec){
       const r = settleDay(rec);
@@ -903,8 +916,8 @@ function vCal(){
       const icon = rec.hit ? '✋' : rec.meltdown ? '😭' : rec.tantrum ? '😤' : '';   // 只标最重的那一级
       if(icon){ pen = '<span class="p">'+icon+'</span>'; penDays++; }
     }
-    cells += `<div class="cell ${ds===td?'today':''} ${fut?'fut':''} ${pen?'pen':''}"
-      ${fut?'':`onclick="pick('${ds}')"`}>${mark}${pen}</div>`;
+    cells += `<div class="cell ${ds===td?'today':''} ${off?'fut':''} ${pen?'pen':''}"
+      ${off?'':`onclick="pick('${ds}')"`}>${mark}${pen}</div>`;
   }
 
   el('main').innerHTML = `
@@ -922,7 +935,7 @@ function vCal(){
       <div class="chip" style="font-size:15px">本月 ☀️ ${sun}</div>
       <div class="chip" style="font-size:15px">日均 ⭐ ${n?(star/n).toFixed(1):'0.0'}</div>
       ${penDays?`<div class="chip" style="font-size:15px">扣分 ${penDays} 天</div>`:''}
-      <span class="muted">😤 小脾气 · 😭 情绪失控 · ✋ 打人　（点任意日期可补录或修改）</span>
+      <span class="muted">😤 小脾气 · 😭 情绪失控 · ✋ 打人　（${cnDate(START).replace(/ 星期./,'')} 起可补录）</span>
     </div>
   </div>
 
@@ -936,7 +949,7 @@ function mv(n){
   if(m<0){m=11;y--} if(m>11){m=0;y++}
   ST.cal={y,m}; render();
 }
-function pick(ds){ ST.sel=ds; go('today'); }
+function pick(ds){ if(!editable(ds)) return; ST.sel=ds; go('today'); }
 
 /* ── 收集册 ── */
 function vAlbum(){
