@@ -102,7 +102,7 @@
       "bonus": 0,
       "exempt": true,
       "settled": true,
-      "at": "2026-08-10T14:07:46.154Z"
+      "at": "2026-08-10T14:08:01.582Z"
     },
     "2026-08-09": {
       "slots": {
@@ -133,7 +133,7 @@
     "veil": 0
   },
   "meta": {
-    "savedAt": "2026-08-10T14:07:46.154Z",
+    "savedAt": "2026-08-10T14:08:01.582Z",
     "fileAt": null,
     "needsGrant": false
   }
