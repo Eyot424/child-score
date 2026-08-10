@@ -99,10 +99,10 @@
       "tantrum": false,
       "meltdown": false,
       "hit": false,
-      "bonus": 1,
+      "bonus": 0,
       "exempt": false,
       "settled": false,
-      "at": "2026-08-10T13:53:36.235Z"
+      "at": "2026-08-10T13:53:38.965Z"
     }
   },
   "ledger": [],
@@ -116,7 +116,7 @@
     "veil": 0
   },
   "meta": {
-    "savedAt": "2026-08-10T13:53:36.235Z",
+    "savedAt": "2026-08-10T13:53:38.965Z",
     "fileAt": null,
     "needsGrant": false
   }
