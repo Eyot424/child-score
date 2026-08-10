@@ -493,6 +493,21 @@ const GIT = {
     return {status:r.status, ok:r.ok, sha:j.content && j.content.sha, msg:j.message};
   },
 
+  /* 硬拉：丢掉本机这份，完全以 GitHub 为准。
+     本机数据错乱时（比如浏览器里留了别的东西）用这个，不走合并。 */
+  async reset(){
+    if(!this.ready()) return;
+    if(!confirm('丢弃这台设备上的数据，完全以 GitHub 上那份为准？\n\nGitHub 上的记录不受影响。')) return;
+    this.status='sync'; paintStatus();
+    try{
+      const rm = await this.remote();
+      if(rm.missing){ this.status='ok'; render(); toast('GitHub 上还没有数据'); return; }
+      this.sha = rm.sha;
+      DB = normalize(rm.data || {});
+      Local.save(DB); this.status='ok'; render();
+      toast('已以 GitHub 为准 ✓');
+    }catch(e){ this.status = e.auth?'badauth':'err'; this.err=e.message; paintStatus(); }
+  },
   async pull(){
     if(!this.ready()) return;
     this.status='sync'; paintStatus();
@@ -551,7 +566,7 @@ function save(){
    ═════════════════════════════════════ */
 function blankDay(){
   const s={}; DB.config.slots.forEach(x=>s[x.id]=false);
-  return {slots:s, tantrum:false, meltdown:false, hit:false, bonus:0, exempt:false, settled:false};
+  return {slots:s, tantrum:false, meltdown:false, hit:false, bonus:0, settled:false};
 }
 /* 只读：看一眼不落库。
    否则光是翻日历就会给每一天生成空记录，而复盘报表的好日子率、日均星数
@@ -572,7 +587,6 @@ function settleDay(day){
   if(on && day.hit) stars = 0;                       // 打人 → 当天清零（情绪失控保留星星）
   let sun = stars >= DB.config.sunThreshold;
   if(on && (day.meltdown || day.hit)) sun = false;   // 失控 / 打人 → 当天无太阳
-  if(day.exempt && !day.hit) sun = true;             // 免检卡
   const sunPenalty = (on && day.hit) ? 1 : 0;        // 打人额外扣 1 个已有太阳
   return {stars, sun, sunPenalty};
 }
@@ -689,7 +703,6 @@ function vToday(){
           <button class="${day.tantrum?'on':''}"  onclick="tog('tantrum')">😤 小脾气</button>
           <button class="${day.meltdown?'on':''}" onclick="tog('meltdown')">😭 情绪失控</button>
           <button class="${day.hit?'on':''}"      onclick="tog('hit')">✋ 打人</button>
-          <button class="${day.exempt?'on':''}"   onclick="tog('exempt')">🎫 免检卡</button>
         </div>
         ${base}
       </div>
@@ -787,7 +800,7 @@ function vCal(){
       else if(rec.hit) mark = '<span class="d">'+d+'</span><span class="m">💧</span>';
       else if(r.stars) mark = '<span class="d">'+d+'</span><span class="s">'+r.stars+'⭐</span>';
       // 扣分标记独立于「扣分是否生效」—— 基线期记下的东西也必须看得见
-      const icon = rec.hit ? '✋' : rec.meltdown ? '😭' : rec.tantrum ? '😤' : '';
+      const icon = rec.hit ? '✋' : rec.meltdown ? '😭' : rec.tantrum ? '😤' : '';   // 只标最重的那一级
       if(icon){ pen = '<span class="p">'+icon+'</span>'; penDays++; }
     }
     cells += `<div class="cell ${ds===td?'today':''} ${fut?'fut':''} ${pen?'pen':''}"
@@ -964,10 +977,13 @@ function vSet(){
     </div>
     ${GIT.ready()?`<div class="row">
       <button class="btn ghost" onclick="GIT.pull()">🔄 立即同步</button>
+      <button class="btn ghost" onclick="GIT.reset()">⤓ 以 GitHub 为准（丢弃本机）</button>
       <button class="btn ghost" onclick="GIT.clear()">退出（清掉本机的 token）</button>
     </div>`:''}
     <div class="muted" style="margin-top:16px">
       数据存成仓库里的 <b>${esc(GIT.cfg.path)}</b>，每次改动提交一次，任何设备打开都是同一份。<br>
+      平时是<b>合并</b>：两台设备各自的改动都保留。<br>
+      如果这台设备上出现了不该有的记录，用「以 GitHub 为准」把本机这份整个换掉。<br>
       规则、分值、里程碑都写在代码里，要改直接说。
     </div>
   </div>`;

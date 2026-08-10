@@ -253,7 +253,6 @@
       meltdown: false,       // 情绪失控
       hit: false,            // 打人
       bonusStars: 0,         // 惊喜星
-      exempt: false,         // 免检卡
       settled: true
     }
   },
@@ -300,7 +299,6 @@ function settleDay(day, config) {
   // 2. 太阳
   let sun = stars >= config.sunThreshold;
   if (enabled && (day.meltdown || day.hit)) sun = false;
-  if (day.exempt) sun = true;                  // 免检卡
 
   // 3. 打人额外扣 1 个已有太阳
   const sunPenalty = (enabled && day.hit) ? 1 : 0;
