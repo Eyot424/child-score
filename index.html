@@ -140,7 +140,7 @@ nav button.on{background:var(--yellow)}
 .cal .cell .d{font-size:13px;font-weight:700;color:#74838f}
 .cal .cell .m{font-size:27px;line-height:1}
 .cal .cell .s{font-size:14px;font-weight:800;color:var(--blue-d)}
-/* 扣分标记：不管扣分生不生效都要显示，否则基线期记的东西看不见 */
+/* 扣分标记：好日子也要能看出当天发生过什么 */
 .cal .cell .p{position:absolute;top:3px;right:4px;font-size:13px;line-height:1}
 .cal .cell.pen{border-color:var(--pink)}
 
@@ -299,7 +299,6 @@ const KEY = 'jinxi-stars-v1';
 
 function defaults(){
   const today = fmtDate(new Date());
-  const end = new Date(); end.setDate(end.getDate()+14);
   return {
     version:1,
     child:{ name:'徐瑾熙', startDate:today },
@@ -313,8 +312,6 @@ function defaults(){
         {id:'meal',  label:'自己好好吃饭',icon:'🍚'}
       ],
       sunThreshold:5,
-      penaltyEnabled:false,
-      baselineEndDate:fmtDate(end),
       starRewards:[
         {id:'screen', label:'玩 20 分钟电子设备', icon:'📱', cost:1,  weeklyLimit:0},
         {id:'sunbuy', label:'补一个太阳',         icon:'☀️', cost:20, weeklyLimit:1}
@@ -358,6 +355,9 @@ function cnDate(s){
    ═══════════════════════════════════ */
 function normalize(d){
   const base = defaults();
+  // 清掉已废弃的字段：基线期和免检卡都删了，别让老数据把它们带回来
+  if(d.config){ delete d.config.penaltyEnabled; delete d.config.baselineEndDate; }
+  if(d.days) Object.values(d.days).forEach(r=>{ if(r) delete r.exempt; });
   // 迁移：零食从「星星换」移到「太阳换」，避免两张表出现同名项
   if(d.config && Array.isArray(d.config.starRewards)){
     const kept = d.config.starRewards.filter(r=>r.id!=='snack');
@@ -582,12 +582,11 @@ function editDay(date){
   return DB.days[date];
 }
 function settleDay(day){
-  const on = DB.config.penaltyEnabled;
   let stars = DB.config.slots.reduce((n,x)=>n+(day.slots[x.id]?1:0),0) + (day.bonus||0);
-  if(on && day.hit) stars = 0;                       // 打人 → 当天清零（情绪失控保留星星）
+  if(day.hit) stars = 0;                          // 打人 → 当天清零（情绪失控保留星星）
   let sun = stars >= DB.config.sunThreshold;
-  if(on && (day.meltdown || day.hit)) sun = false;   // 失控 / 打人 → 当天无太阳
-  const sunPenalty = (on && day.hit) ? 1 : 0;        // 打人额外扣 1 个已有太阳
+  if(day.meltdown || day.hit) sun = false;        // 失控 / 打人 → 当天无太阳
+  const sunPenalty = day.hit ? 1 : 0;             // 打人额外扣 1 个已有太阳
   return {stars, sun, sunPenalty};
 }
 function totals(){
@@ -668,8 +667,6 @@ function vToday(){
   const date = ST.sel, day = getDay(date), r = settleDay(day);
   const isToday = date === todayStr();
   const future  = date > todayStr();
-  const base = DB.config.penaltyEnabled ? '' :
-    `<div class="muted" style="margin-top:10px">🌱 基线期进行中（至 ${DB.config.baselineEndDate}）—— 扣分只记录，不生效</div>`;
 
   el('main').innerHTML = `
   <div class="grid2">
@@ -704,7 +701,6 @@ function vToday(){
           <button class="${day.meltdown?'on':''}" onclick="tog('meltdown')">😭 情绪失控</button>
           <button class="${day.hit?'on':''}"      onclick="tog('hit')">✋ 打人</button>
         </div>
-        ${base}
       </div>
     </div>
 
@@ -799,7 +795,6 @@ function vCal(){
       if(r.sun){ sun++; mark = '<span class="d">'+d+'</span><span class="m">☀️</span>'; }
       else if(rec.hit) mark = '<span class="d">'+d+'</span><span class="m">💧</span>';
       else if(r.stars) mark = '<span class="d">'+d+'</span><span class="s">'+r.stars+'⭐</span>';
-      // 扣分标记独立于「扣分是否生效」—— 基线期记下的东西也必须看得见
       const icon = rec.hit ? '✋' : rec.meltdown ? '😭' : rec.tantrum ? '😤' : '';   // 只标最重的那一级
       if(icon){ pen = '<span class="p">'+icon+'</span>'; penDays++; }
     }
@@ -1045,15 +1040,6 @@ function celebrate(icon, t1, t2){
   await GIT.init();             // 再连 GitHub，合并成同一份
 
   window.addEventListener('beforeunload', ()=>{ Local.save(DB); });
-
-  // 基线期到期提醒
-  if(!DB.config.penaltyEnabled && todayStr() > DB.config.baselineEndDate
-     && Object.keys(DB.days).length > 0){
-    setTimeout(()=>{
-      if(confirm('基线期结束了。\n\n现在去设置里看看这两周的数据，然后开启扣分规则？'))
-        go('set');
-    }, 600);
-  }
 })();
 </script>
 </body>
