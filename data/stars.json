@@ -89,20 +89,20 @@
   "days": {
     "2026-08-10": {
       "slots": {
-        "teeth": false,
-        "sleep": false,
-        "study": false,
-        "chore": false,
+        "teeth": true,
+        "sleep": true,
+        "study": true,
+        "chore": true,
         "temper": false,
-        "meal": false
+        "meal": true
       },
       "tantrum": false,
       "meltdown": false,
-      "hit": false,
+      "hit": true,
       "bonus": 0,
-      "exempt": false,
-      "settled": false,
-      "at": "2026-08-10T13:53:38.965Z"
+      "exempt": true,
+      "settled": true,
+      "at": "2026-08-10T13:55:21.845Z"
     }
   },
   "ledger": [],
@@ -116,7 +116,7 @@
     "veil": 0
   },
   "meta": {
-    "savedAt": "2026-08-10T13:53:38.965Z",
+    "savedAt": "2026-08-10T13:55:21.845Z",
     "fileAt": null,
     "needsGrant": false
   }
