@@ -329,7 +329,7 @@ function defaults(){
     ledger:[],
     fulfilled:{toy:0, park:0, trip:0},
     ui:{ bg:null, veil:0 },
-    meta:{ savedAt:null, fileAt:null, needsGrant:false }
+    meta:{ savedAt:null }
   };
 }
 
@@ -387,109 +387,14 @@ const Local = {
   }
 };
 
-/* ── IndexedDB：只用来记住那个文件的句柄 ── */
-function idb(fn){
-  return new Promise((res,rej)=>{
-    const r = indexedDB.open('jinxi-fs', 1);
-    r.onupgradeneeded = ()=>{ if(!r.result.objectStoreNames.contains('h')) r.result.createObjectStore('h'); };
-    r.onsuccess = ()=>{ try{ fn(r.result, res, rej); }catch(e){ rej(e); } };
-    r.onerror   = ()=>rej(r.error);
-  });
-}
-const idbGet = k => idb((db,res,rej)=>{
-  const q = db.transaction('h','readonly').objectStore('h').get(k);
-  q.onsuccess=()=>res(q.result); q.onerror=()=>rej(q.error);
-}).catch(()=>null);
-const idbPut = (k,v) => idb((db,res,rej)=>{
-  const t = db.transaction('h','readwrite'); t.objectStore('h').put(v,k);
-  t.oncomplete=()=>res(true); t.onerror=()=>rej(t.error);
-}).catch(()=>false);
-
-/* ── 磁盘文件 ── */
-const FS = {
-  supported: typeof window.showSaveFilePicker === 'function',
-  handle: null,
-  name: null,
-
-  async perm(mode){
-    if(!this.handle) return 'none';
-    const o = {mode};
-    if(await this.handle.queryPermission(o) === 'granted') return 'granted';
-    try{ return await this.handle.requestPermission(o); }catch(e){ return 'denied'; }
-  },
-  async bind(){
-    if(!this.supported){ toast('这个浏览器不支持，请用 Chrome 或 Edge'); return; }
-    try{
-      const h = await window.showSaveFilePicker({
-        suggestedName: `${DB.child.name}的星星.json`,
-        types:[{description:'数据文件', accept:{'application/json':['.json']}}]
-      });
-      this.handle = h; this.name = h.name;
-      await idbPut('handle', h);
-      await this.write(DB, true);
-      render(); toast('已绑定：' + h.name);
-    }catch(e){ if(e.name!=='AbortError') toast('绑定失败：'+e.message); }
-  },
-  async open(){
-    if(!this.supported){ toast('这个浏览器不支持，请用「导入备份」'); return; }
-    try{
-      const [h] = await window.showOpenFilePicker({
-        types:[{description:'数据文件', accept:{'application/json':['.json']}}]
-      });
-      this.handle = h; this.name = h.name;
-      await idbPut('handle', h);
-      await this.read(true);
-    }catch(e){ if(e.name!=='AbortError') toast('打开失败：'+e.message); }
-  },
-  async read(adopt){
-    if(await this.perm('read') !== 'granted') return null;
-    try{
-      const txt = await (await this.handle.getFile()).text();
-      if(!txt.trim()) return null;
-      const d = normalize(JSON.parse(txt));
-      if(adopt){ DB = d; Local.save(DB); render(); toast('数据已从文件读回 ✓'); }
-      return d;
-    }catch(e){ console.warn(e); return null; }
-  },
-  async write(d, force){
-    if(!this.handle) return false;
-    if(!force && await this.handle.queryPermission({mode:'readwrite'}) !== 'granted') return false;
-    if(force && await this.perm('readwrite') !== 'granted') return false;
-    try{
-      const w = await this.handle.createWritable();
-      await w.write(JSON.stringify(d, null, 2)); await w.close();
-      DB.meta.fileAt = new Date().toISOString();
-      return true;
-    }catch(e){ console.error(e); return false; }
-  },
-  async restore(){
-    const h = await idbGet('handle');
-    if(!h) return false;
-    this.handle = h; this.name = h.name;
-    if(await h.queryPermission({mode:'readwrite'}) !== 'granted'){
-      DB.meta.needsGrant = true; render(); return false;   // 需要用户点一下授权
-    }
-    const fileData = await this.read(false);
-    if(fileData){
-      // 文件和本地哪个新用哪个，两边都不丢
-      const a = fileData.meta?.savedAt || '', b = DB.meta?.savedAt || '';
-      if(a >= b){ DB = fileData; Local.save(DB); }
-      else { await this.write(DB); }
-    }
-    DB.meta.needsGrant = false; render(); return true;
-  },
-  async grant(){
-    if(await this.perm('readwrite') === 'granted'){ await this.restore(); toast('已连上数据文件 ✓'); }
-    else toast('没有拿到权限');
-  }
-};
-
 /* ═══════════════ 云端同步 ═══════════════
    两台设备同时开着时，笨办法（整份覆盖）会让旧数据静默盖掉新数据。
    这里用：逐天比时间戳 + 流水按 id 取并集 + 乐观并发（rev 对不上就合并后重试），
    两边的修改都不会丢。
    ═══════════════════════════════════════ */
 const GITKEY = 'jinxi-git';
+/* 仓库是固定的，预填好 —— 用户只需要粘一次 token */
+const GITDEFAULTS = { owner:'Eyot424', repo:'child-score', branch:'master', path:'data/stars.json', token:'' };
 function stamp(){ return new Date().toISOString(); }
 function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
 
@@ -535,9 +440,10 @@ function b64dec(b64){
 const GIT = {
   cfg:null, sha:null, status:'needcfg', err:'', busy:false, again:false,
 
-  load(){ try{ return JSON.parse(localStorage.getItem(GITKEY)||'null'); }catch(e){ return null; } },
+  load(){ try{ return Object.assign({}, GITDEFAULTS, JSON.parse(localStorage.getItem(GITKEY)||'{}')); }
+          catch(e){ return Object.assign({}, GITDEFAULTS); } },
   set(c){ this.cfg=c; this.sha=null; localStorage.setItem(GITKEY, JSON.stringify(c)); },
-  clear(){ localStorage.removeItem(GITKEY); this.cfg=null; this.sha=null; this.status='needcfg'; render(); },
+  clear(){ localStorage.removeItem(GITKEY); this.cfg=this.load(); this.sha=null; this.status='needcfg'; render(); },
   ready(){ const c=this.cfg; return !!(c && c.owner && c.repo && c.path && c.token); },
 
   url(){ const c=this.cfg;
@@ -625,16 +531,13 @@ const GIT = {
 let DB = Local.load() || defaults();
 let ST = { view:'today', sel:todayStr(), cal:(()=>{const n=new Date();return {y:n.getFullYear(),m:n.getMonth()};})() };
 
-let fsTimer, cloudTimer;
+let cloudTimer;
 function save(){
   DB.meta = DB.meta || {};
   DB.meta.savedAt = stamp();
-  const okLocal = Local.save(DB);
-  clearTimeout(fsTimer);
-  fsTimer = setTimeout(()=>{ FS.write(DB).then(ok=>{ if(ok) paintStatus(); }); }, 400);
+  Local.save(DB);                                  // 本地只是镜像，让页面秒开
   clearTimeout(cloudTimer);
   cloudTimer = setTimeout(()=>GIT.push(), 1200);   // GitHub 提交约 1 秒，攒一下再发
-  if(!okLocal && !FS.handle && !GIT.ready()) toast('⚠️ 没能保存！请到设置里绑定数据文件');
   paintStatus();
 }
 
@@ -708,39 +611,36 @@ function render(){
   ({today:vToday, cal:vCal, album:vAlbum, shop:vShop, set:vSet})[ST.view]();
   applyBg(); paintStatus();
 }
-/* 数据存哪儿了 —— 永远让用户看得见 */
+/* 数据存哪儿了 —— 永远让用户看得见。同步只有 GitHub 一条路，不给选项 */
+const tokenBox = btn => `<span class="g">
+  <input type="password" id="tokIn" placeholder="粘贴 GitHub token" style="width:210px"
+    onkeydown="if(event.key==='Enter')connectGit(this.value)">
+  <button class="btn sm primary" onclick="connectGit(el('tokIn').value)">${btn}</button></span>`;
+
 function paintStatus(){
   const b = el('banner'); if(!b) return;
+  if(document.activeElement && document.activeElement.id === 'tokIn') return;   // 别把正在输的 token 刷掉
   const t = DB.meta?.savedAt ? new Date(DB.meta.savedAt).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'}) : '—';
 
-  if(GIT.ready() || GIT.status==='badauth'){
-    if(GIT.status==='sync'){
-      b.innerHTML = `<div class="bnr ok">🔄 正在提交到 GitHub…</div>`; return; }
-    if(GIT.status==='ok'){
-      b.innerHTML = `<div class="bnr ok">🐙 已同步到 ${esc(GIT.cfg.owner)}/${esc(GIT.cfg.repo)} · 上次保存 ${t} · 所有设备是同一份数据</div>`; return; }
-    if(GIT.status==='badauth'){
-      b.innerHTML = `<div class="bnr bad">🔑 token 有问题：${esc(GIT.err)}
-        <span class="g"><button class="btn sm primary" onclick="go('set')">去改</button></span></div>`; return; }
-    if(GIT.status==='err'){
-      b.innerHTML = `<div class="bnr bad">📡 连不上 GitHub（${esc(GIT.err)}）—— 改动先存在本机，恢复后自动补传
-        <span class="g"><button class="btn sm primary" onclick="GIT.push()">立即重试</button></span></div>`; return; }
+  switch(GIT.status){
+    case 'sync':
+      b.innerHTML = `<div class="bnr ok">🔄 正在提交到 GitHub…</div>`; return;
+    case 'ok':
+      b.innerHTML = `<div class="bnr ok">🐙 已同步到 ${esc(GIT.cfg.owner)}/${esc(GIT.cfg.repo)} · 上次保存 ${t} · 所有设备同一份数据</div>`; return;
+    case 'badauth':
+      b.innerHTML = `<div class="bnr bad">🔑 token 不能用：${esc(GIT.err)}${tokenBox('换一个')}</div>`; return;
+    case 'err':
+      b.innerHTML = `<div class="bnr bad">📡 连不上 GitHub（${esc(GIT.err)}）—— 改动已存在本机，恢复后自动补传
+        <span class="g"><button class="btn sm primary" onclick="GIT.push()">立即重试</button></span></div>`; return;
+    default:
+      b.innerHTML = `<div class="bnr warn">🔑 粘贴 GitHub token 就能自动同步，所有设备共用一份数据${tokenBox('连接')}</div>`;
   }
-
-  if(DB.meta?.needsGrant){
-    b.innerHTML = `<div class="bnr warn">🔌 数据文件还没连上（${esc(FS.name||'')}）
-      <span class="g"><button class="btn sm primary" onclick="FS.grant()">点这里连上</button></span></div>`;
-  }else if(FS.handle){
-    b.innerHTML = `<div class="bnr ok">💾 数据存在文件 <b>${esc(FS.name)}</b> 里 · 上次保存 ${t}</div>`;
-  }else if(!Local.ok){
-    b.innerHTML = `<div class="bnr bad">🚨 这个浏览器不让本地网页存数据，<b>现在录的东西刷新就会没</b>
-      <span class="g"><button class="btn sm primary" onclick="FS.bind()">绑定数据文件</button></span></div>`;
-  }else{
-    b.innerHTML = `<div class="bnr warn">⚠️ 数据只存在浏览器里，清理浏览数据就会丢
-      <span class="g">
-        <button class="btn sm primary" onclick="go('set')">🐙 同步到 GitHub</button>
-        <button class="btn sm ghost" onclick="FS.bind()">存到本地文件</button>
-      </span></div>`;
-  }
+}
+function connectGit(tok){
+  tok = (tok||'').trim();
+  if(!tok){ toast('把 token 粘进来'); return; }
+  GIT.set(Object.assign({}, GIT.cfg || GITDEFAULTS, {token:tok}));
+  GIT.pull();
 }
 function go(v){ ST.view=v; render(); window.scrollTo(0,0); }
 function el(id){ return document.getElementById(id); }
@@ -1110,62 +1010,37 @@ function vSet(){
   </div>
 
   <div class="card">
-    <h2>数据存在哪</h2>
+    <h2>🐙 GitHub 同步</h2>
     <table class="rules" style="margin-bottom:16px">
-      <tr><td>GitHub 同步</td><td style="text-align:right;font-weight:800">
+      <tr><td>状态</td><td style="text-align:right;font-weight:800">
         ${GIT.status==='ok' ? '✅ 已连上'
-          : GIT.status==='badauth' ? '🔑 token 有问题：'+esc(GIT.err)
+          : GIT.status==='badauth' ? '🔑 token 不能用：'+esc(GIT.err)
           : GIT.status==='err' ? '⚠️ 连不上：'+esc(GIT.err)
-          : '❌ 没配置'}</td></tr>
-      <tr><td>数据文件（备份用）</td><td style="text-align:right;font-weight:800">
-        ${FS.handle ? '✅ '+esc(FS.name) : '❌ 没绑定'}</td></tr>
-      <tr><td>浏览器存储</td><td style="text-align:right;font-weight:800">
-        ${Local.ok ? '✅ 可用（镜像）' : '❌ 被禁用'}</td></tr>
+          : '❌ 还没填 token'}</td></tr>
+      <tr><td>仓库</td><td style="text-align:right;font-weight:800">
+        ${esc(GIT.cfg.owner)}/${esc(GIT.cfg.repo)} · ${esc(GIT.cfg.path)}</td></tr>
       <tr><td>上次保存</td><td style="text-align:right;font-weight:800">
         ${DB.meta?.savedAt ? new Date(DB.meta.savedAt).toLocaleString('zh-CN') : '—'}</td></tr>
       <tr><td>已记录</td><td style="text-align:right;font-weight:800">${Object.keys(DB.days).length} 天</td></tr>
     </table>
-    <h2 style="font-size:17px;margin-top:20px">🐙 同步到 GitHub</h2>
-    <div class="muted" style="margin-bottom:14px">
-      数据存成仓库里的一个 json，每次改动提交一次。任何设备打开都是同一份，
-      而且白得一份完整的修改历史。填法见 <b>SYNC.md</b>。
-    </div>
-    <div class="field"><label>GitHub 用户名</label>
-      <input type="text" class="lbl" id="gOwner" value="${esc(GIT.cfg?.owner||'')}" placeholder="yogix"></div>
-    <div class="field"><label>仓库名</label>
-      <input type="text" class="lbl" id="gRepo" value="${esc(GIT.cfg?.repo||'')}" placeholder="child-score"></div>
-    <div class="field"><label>分支</label>
-      <input type="text" class="lbl" id="gBranch" value="${esc(GIT.cfg?.branch||'master')}"></div>
-    <div class="field"><label>文件路径</label>
-      <input type="text" class="lbl" id="gPath" value="${esc(GIT.cfg?.path||'data/stars.json')}"></div>
+
     <div class="field"><label>Token</label>
-      <input type="password" class="lbl" id="gToken" placeholder="${GIT.cfg?.token?'（已保存，要换才填）':'ghp_… 或 github_pat_…'}">
-      <span class="muted">细粒度 token，只勾 Contents: Read and write，仓库只选这一个</span></div>
+      <input type="password" class="lbl" id="gToken"
+        placeholder="${GIT.ready()?'（已保存，要换才填）':'github_pat_…'}"
+        onkeydown="if(event.key==='Enter')connectGit(this.value)">
+      <button class="btn primary" onclick="connectGit(el('gToken').value)">${GIT.ready()?'换 token':'连接'}</button>
+    </div>
     <div class="row">
-      <button class="btn primary" onclick="saveGit()">保存并连接</button>
       ${GIT.ready()?'<button class="btn ghost" onclick="GIT.pull()">🔄 立即同步</button>':''}
-      ${GIT.cfg?'<button class="btn ghost" onclick="GIT.clear()">断开</button>':''}
-    </div>
-    <div class="muted" style="margin-top:12px">
-      同一天在两台设备上改，取时间戳新的那份；兑换流水按 id 取并集 —— 两边的改动都不会丢。
-    </div>
-    <hr>
-    <div class="row">
-      <button class="btn ${GIT.ready()?'ghost':'primary'}" onclick="FS.bind()" ${FS.supported?'':'disabled'}>
-        ${FS.handle?'换一个数据文件':'💾 存到本地文件'}</button>
-      <button class="btn ghost" onclick="FS.open()" ${FS.supported?'':'disabled'}>📂 打开已有文件</button>
-    </div>
-    <div class="muted" style="margin-top:12px">
-      ${FS.supported
-        ? '绑定后每次改动同时写进那个 .json 文件，作为云端之外的第二份备份。'
-        : '这个浏览器不支持直接写文件（需要 Chrome 或 Edge），只能用下面的导出/导入。'}
-    </div>
-    <hr>
-    <div class="row">
-      <button class="btn ghost" onclick="exportJSON()">⬇ 导出备份</button>
-      <button class="btn ghost" onclick="el('impFile').click()">⬆ 导入备份</button>
-      <input type="file" id="impFile" accept=".json" class="hidden" onchange="importJSON(this)">
+      ${GIT.ready()?'<button class="btn ghost" onclick="GIT.clear()">退出（清掉本机的 token）</button>':''}
+      <button class="btn ghost" onclick="exportJSON()">⬇ 导出一份备份</button>
       <button class="btn danger" onclick="wipe()">清空全部</button>
+      <input type="file" id="impFile" accept=".json" class="hidden" onchange="importJSON(this)">
+    </div>
+    <div class="muted" style="margin-top:14px">
+      数据存成仓库里的 <b>${esc(GIT.cfg.path)}</b>，每次改动提交一次，任何设备打开都是同一份。
+      同一天在两台设备上改，取时间戳新的那份；兑换流水按 id 取并集 —— 两边的改动都不会丢。<br>
+      Token 要用细粒度的（Fine-grained），仓库只勾 <b>${esc(GIT.cfg.repo)}</b>，权限只给 Contents 读写。
     </div>
   </div>
 
@@ -1208,17 +1083,6 @@ function setCfg(k,v){ DB.config[k]=v; save(); render(); }
 function setSlot(i,k,v){ DB.config.slots[i][k]=v; save(); render(); }
 function setRw(i,k,v){ DB.config.starRewards[i][k]=v; save(); render(); }
 function setSw(i,k,v){ DB.config.sunRewards[i][k]=v; save(); render(); }
-function saveGit(){
-  const c = {
-    owner : el('gOwner').value.trim(),
-    repo  : el('gRepo').value.trim(),
-    branch: el('gBranch').value.trim() || 'master',
-    path   : el('gPath').value.trim()  || 'data/stars.json',
-    token : el('gToken').value.trim()  || GIT.cfg?.token || ''
-  };
-  if(!c.owner || !c.repo || !c.token){ toast('用户名、仓库名、token 都要填'); return; }
-  GIT.set(c); GIT.pull();
-}
 function setMs(i,k,v){ DB.config.milestones[i][k]=v; save(); render(); }
 
 /* ── 背景图（压缩后存本地） ── */
@@ -1296,10 +1160,8 @@ function celebrate(icon, t1, t2){
 /* ── 启动 ── */
 (async function init(){
   render();                     // 先用 localStorage 的镜像把页面点亮
-  await FS.restore();           // 再连磁盘文件，两边取新的那份
-  await GIT.init();             // 最后连 GitHub，合并成同一份
+  await GIT.init();             // 再连 GitHub，合并成同一份
 
-  // 关页面前把最后一次改动落盘
   window.addEventListener('beforeunload', ()=>{ Local.save(DB); });
 
   // 基线期到期提醒
