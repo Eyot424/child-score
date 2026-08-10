@@ -1,6 +1,7 @@
 {
   "child": {
-    "name": "徐瑾熙"
+    "name": "徐瑾熙",
+    "startDate": "2026-08-10"
   },
   "config": {
     "slots": [
@@ -96,7 +97,8 @@
       "meltdown": true,
       "hit": false,
       "bonus": 0,
-      "at": "2026-08-10T14:19:40.393Z"
+      "settled": true,
+      "at": "2026-08-10T14:40:53.990Z"
     },
     "2026-08-09": {
       "slots": {
@@ -111,6 +113,7 @@
       "meltdown": false,
       "hit": false,
       "bonus": 0,
+      "settled": true,
       "at": "2026-08-10T13:59:33.582Z"
     }
   },
@@ -121,8 +124,13 @@
     "trip": 0
   },
   "meta": {
-    "savedAt": "2026-08-10T14:19:40.393Z",
+    "savedAt": "2026-08-10T14:40:53.990Z",
     "fileAt": null,
     "needsGrant": false
+  },
+  "version": 1,
+  "ui": {
+    "bg": null,
+    "veil": 0
   }
 }
