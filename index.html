@@ -803,6 +803,11 @@ function vCal(){
       <div class="chip" style="font-size:15px">日均 ⭐ ${n?(star/n).toFixed(1):'0.0'}</div>
       <span class="muted">点任意日期可以补录或修改</span>
     </div>
+  </div>
+
+  <div class="card">
+    <h2>全部记录 <span class="muted" style="margin-left:auto">校准里程碑就看这几个数</span></h2>
+    ${statsBlock()}
   </div>`;
 }
 function mv(n){
@@ -925,93 +930,12 @@ function fulfill(id){
   save(); render(); toast('已记录 ✓');
 }
 
-/* ── 设置 ── */
+/* ── 设置：只有 token。规则要改直接改代码，不做成界面 ── */
 function vSet(){
-  const c = DB.config;
   el('main').innerHTML = `
   <div class="card">
-    <h2>孩子</h2>
-    <div class="field"><label>名字</label>
-      <input type="text" class="lbl" value="${esc(DB.child.name)}" onchange="setName(this.value)"></div>
-  </div>
-
-  <div class="card">
-    <h2>每天的 ${c.slots.length} 件事</h2>
-    ${c.slots.map((s,i)=>`<div class="field">
-      <input type="text" class="ic" value="${esc(s.icon)}" onchange="setSlot(${i},'icon',this.value)">
-      <input type="text" class="lbl" value="${esc(s.label)}" onchange="setSlot(${i},'label',this.value)">
-    </div>`).join('')}
-    <hr>
-    <div class="field"><label>太阳门槛</label>
-      <input type="number" class="num" min="1" max="${c.slots.length}" value="${c.sunThreshold}"
-        onchange="setCfg('sunThreshold',+this.value)">
-      <span class="muted">拿到几颗星星才算好日子（当前 ${c.sunThreshold}/${c.slots.length}，最多错一件）</span></div>
-  </div>
-
-  <div class="card">
-    <h2>基线期</h2>
-    <div class="field"><label>扣分规则生效</label>
-      <button class="btn sm ${c.penaltyEnabled?'primary':'ghost'}"
-        onclick="setCfg('penaltyEnabled',${!c.penaltyEnabled})">
-        ${c.penaltyEnabled?'✓ 已生效':'✗ 只记录不生效'}</button></div>
-    <div class="field"><label>基线期结束日</label>
-      <input type="date" value="${c.baselineEndDate}" onchange="setCfg('baselineEndDate',this.value)"></div>
-    <div class="muted">前两周只记录不扣分：让她先尝到「攒星星真能换到东西」，信任要在惩罚之前建立。</div>
-  </div>
-
-  <div class="card">
-    <h2>太阳换的东西</h2>
-    ${c.sunRewards.map((r,i)=>`<div class="field">
-      <input type="text" class="ic"  value="${esc(r.icon)}"  onchange="setSw(${i},'icon',this.value)">
-      <input type="text" class="lbl" value="${esc(r.label)}" onchange="setSw(${i},'label',this.value)">
-      <input type="number" class="num" min="1" value="${r.cost}" onchange="setSw(${i},'cost',+this.value)">
-      <span class="muted">☀️ · 每周上限</span>
-      <input type="number" class="num" min="0" value="${r.weeklyLimit}" onchange="setSw(${i},'weeklyLimit',+this.value)">
-      <span class="muted">（0 = 不限）</span>
-    </div>`).join('')}
-    <div class="muted">花太阳买东西会同时减慢里程碑进度。每周吃 2 次零食的话，
-      10/20/60 大约要 47 / 93 / 280 天 —— 想贴回 2 周 / 1 月 / 1 季度，把下面的里程碑改成 5 / 10 / 30。</div>
-  </div>
-
-  <div class="card">
-    <h2>星星换的东西</h2>
-    ${c.starRewards.map((r,i)=>`<div class="field">
-      <input type="text" class="ic"  value="${esc(r.icon)}"  onchange="setRw(${i},'icon',this.value)">
-      <input type="text" class="lbl" value="${esc(r.label)}" onchange="setRw(${i},'label',this.value)">
-      <input type="number" class="num" min="1" value="${r.cost}" onchange="setRw(${i},'cost',+this.value)">
-      <span class="muted">⭐ · 每周上限</span>
-      <input type="number" class="num" min="0" value="${r.weeklyLimit}" onchange="setRw(${i},'weeklyLimit',+this.value)">
-      <span class="muted">（0 = 不限）</span>
-    </div>`).join('')}
-  </div>
-
-  <div class="card">
-    <h2>太阳里程碑</h2>
-    ${c.milestones.map((m,i)=>`<div class="field">
-      <input type="text" class="ic"  value="${esc(m.icon)}"  onchange="setMs(${i},'icon',this.value)">
-      <input type="text" class="lbl" value="${esc(m.label)}" onchange="setMs(${i},'label',this.value)">
-      <span class="muted">每</span>
-      <input type="number" class="num" min="1" value="${m.threshold}" onchange="setMs(${i},'threshold',+this.value)">
-      <span class="muted">个太阳解锁一次 · 已兑现 ${DB.fulfilled[m.id]||0} 次</span>
-    </div>`).join('')}
-    <div class="muted">两周基线期结束后，如果好日子率明显偏低，可以把 10/20/60 降到 8/16/48。</div>
-  </div>
-
-  <div class="card">
-    <h2>背景图</h2>
-    <div class="field"><label>选一张图</label>
-      <input type="file" accept="image/*" onchange="loadBg(this)"></div>
-    <div class="field"><label>白色遮罩浓度</label>
-      <input type="range" min="0" max="80" value="${Math.round((DB.ui.veil||0)*100)}"
-        oninput="setVeil(this.value)" style="width:220px">
-      <span class="muted" id="veilTxt">${Math.round((DB.ui.veil||0)*100)}%</span></div>
-    ${DB.ui.bg?'<button class="btn sm ghost" onclick="clearBg()">去掉背景图</button>':''}
-    <div class="muted" style="margin-top:10px">图片会自动压缩后存在这台电脑上，不会上传到任何地方。遮罩用来保证文字看得清。</div>
-  </div>
-
-  <div class="card">
     <h2>🐙 GitHub 同步</h2>
-    <table class="rules" style="margin-bottom:16px">
+    <table class="rules" style="margin-bottom:18px">
       <tr><td>状态</td><td style="text-align:right;font-weight:800">
         ${GIT.status==='ok' ? '✅ 已连上'
           : GIT.status==='badauth' ? '🔑 token 不能用：'+esc(GIT.err)
@@ -1030,23 +954,14 @@ function vSet(){
         onkeydown="if(event.key==='Enter')connectGit(this.value)">
       <button class="btn primary" onclick="connectGit(el('gToken').value)">${GIT.ready()?'换 token':'连接'}</button>
     </div>
-    <div class="row">
-      ${GIT.ready()?'<button class="btn ghost" onclick="GIT.pull()">🔄 立即同步</button>':''}
-      ${GIT.ready()?'<button class="btn ghost" onclick="GIT.clear()">退出（清掉本机的 token）</button>':''}
-      <button class="btn ghost" onclick="exportJSON()">⬇ 导出一份备份</button>
-      <button class="btn danger" onclick="wipe()">清空全部</button>
-      <input type="file" id="impFile" accept=".json" class="hidden" onchange="importJSON(this)">
+    ${GIT.ready()?`<div class="row">
+      <button class="btn ghost" onclick="GIT.pull()">🔄 立即同步</button>
+      <button class="btn ghost" onclick="GIT.clear()">退出（清掉本机的 token）</button>
+    </div>`:''}
+    <div class="muted" style="margin-top:16px">
+      数据存成仓库里的 <b>${esc(GIT.cfg.path)}</b>，每次改动提交一次，任何设备打开都是同一份。<br>
+      规则、分值、里程碑都写在代码里，要改直接说。
     </div>
-    <div class="muted" style="margin-top:14px">
-      数据存成仓库里的 <b>${esc(GIT.cfg.path)}</b>，每次改动提交一次，任何设备打开都是同一份。
-      同一天在两台设备上改，取时间戳新的那份；兑换流水按 id 取并集 —— 两边的改动都不会丢。<br>
-      Token 要用细粒度的（Fine-grained），仓库只勾 <b>${esc(GIT.cfg.repo)}</b>，权限只给 Contents 读写。
-    </div>
-  </div>
-
-  <div class="card">
-    <h2>复盘要看的三个数</h2>
-    ${statsBlock()}
   </div>`;
 }
 function statsBlock(){
@@ -1077,73 +992,16 @@ function statsBlock(){
     </div>`;
 }
 
-/* ── 设置操作 ── */
-function setName(v){ DB.child.name = v.trim()||'宝贝'; save(); render(); }
-function setCfg(k,v){ DB.config[k]=v; save(); render(); }
-function setSlot(i,k,v){ DB.config.slots[i][k]=v; save(); render(); }
-function setRw(i,k,v){ DB.config.starRewards[i][k]=v; save(); render(); }
-function setSw(i,k,v){ DB.config.sunRewards[i][k]=v; save(); render(); }
-function setMs(i,k,v){ DB.config.milestones[i][k]=v; save(); render(); }
-
-/* ── 背景图（压缩后存本地） ── */
-function loadBg(input){
-  const f = input.files[0]; if(!f) return;
-  const rd = new FileReader();
-  rd.onload = e=>{
-    const img = new Image();
-    img.onload = ()=>{
-      const max = 1920, sc = Math.min(1, max/img.width);
-      const cv = document.createElement('canvas');
-      cv.width = img.width*sc; cv.height = img.height*sc;
-      cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height);
-      DB.ui.bg = cv.toDataURL('image/jpeg', 0.82);
-      if(!DB.ui.veil) DB.ui.veil = 0.35;
-      save(); render(); toast('背景换好啦 🖼');
-    };
-    img.onerror = ()=>toast('这张图读不了，换一张试试');
-    img.src = e.target.result;
-  };
-  rd.readAsDataURL(f);
-}
-function clearBg(){ DB.ui.bg=null; save(); render(); }
-function setVeil(v){
-  DB.ui.veil = v/100; el('veilTxt').textContent = v+'%';
-  el('bgVeil').style.opacity = DB.ui.veil; save();
-}
+/* 背景图：没有上传界面了，但 DB.ui.bg 里有值就用（要换背景直接改代码） */
 function applyBg(){
   el('bgLayer').style.backgroundImage = DB.ui.bg ? `url(${DB.ui.bg})` : '';
   el('bgVeil').style.opacity = DB.ui.bg ? (DB.ui.veil||0) : 0;
   el('bgPattern').style.opacity = DB.ui.bg ? 0.25 : 1;
 }
 
-/* ── 数据导入导出 ── */
-function exportJSON(){
-  const blob = new Blob([JSON.stringify(DB,null,2)], {type:'application/json'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `${DB.child.name}的星星-备份-${todayStr()}.json`;
-  a.click(); URL.revokeObjectURL(a.href);
-  toast('备份已下载 ⬇');
-}
-function importJSON(input){
-  const f = input.files[0]; if(!f) return;
-  const rd = new FileReader();
-  rd.onload = e=>{
-    try{
-      const d = JSON.parse(e.target.result);
-      if(!d.days || !d.config) throw new Error('格式不对');
-      if(!confirm('导入会覆盖现在的全部数据，确定？')) return;
-      DB = normalize(d);
-      save(); render(); toast('导入成功 ✓');
-    }catch(err){ alert('这个文件读不了：'+err.message); }
-  };
-  rd.readAsText(f); input.value='';
-}
-function wipe(){
-  if(!confirm('清空全部数据？这个撤不回来。')) return;
-  if(!confirm('真的确定？建议先导出备份。')) return;
-  DB = defaults(); save(); render(); toast('已清空');
-}
+/* 导出 / 导入 / 清空都去掉了 ——
+   数据是 GitHub 仓库里的一个 json，本身就带完整历史，
+   要备份直接从仓库下，要回滚直接 revert 一个 commit。 */
 
 /* ── 提示 / 庆祝 ── */
 let tmr;
