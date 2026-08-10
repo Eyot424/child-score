@@ -162,7 +162,10 @@ nav button.on{background:var(--yellow)}
   font-size:27px;position:relative;transition:.14s;
   min-width:0;                      /* grid 项目默认 min-width:auto，会被内容撑破容器 */
 }
-.acell.multi{font-size:16px;letter-spacing:-1px}   /* 一格里两三个奖品图标，得缩小才塞得下 */
+/* 图标单独包一层：不换行、行高压到 1，才能真正居中在圆心 */
+.acell .f{display:block;line-height:1;white-space:nowrap;text-align:center}
+.acell.p2 .f{font-size:20px;letter-spacing:-1px}   /* 两个奖品同格 */
+.acell.p3 .f{font-size:13px;letter-spacing:-1px}   /* 第 60 格：三个，得留出弧边余量 */
 .acell.full{background:#FFF3C4;border-color:var(--ink)}
 .acell.prize{border-color:var(--pink);border-width:4px;background:#FFF0F6}
 .acell.prize.full{background:var(--yellow)}
@@ -232,7 +235,9 @@ table.rules td{padding:6px 8px;border-bottom:1px solid var(--gray-l)}
   input[type=text],input[type=number],input[type=date]{padding:11px 12px}
   input.lbl{width:100%}
   .album{column-gap:6px;row-gap:22px}
-  .acell{font-size:15px;border-width:2px}
+  .acell{font-size:20px;border-width:2px}
+  .acell.p2 .f{font-size:16px}
+  .acell.p3 .f{font-size:12px}
   .acell.prize{border-width:3px}
   .acell .n{font-size:9px;bottom:-15px}
   .card{padding:16px}
@@ -880,9 +885,10 @@ function vAlbum(){
   for(let i=1;i<=60;i++){
     const prizes = ms.filter(m=>i % m.threshold === 0);
     const full = i <= inRnd;
-    cells += `<div class="acell ${full?'full':''} ${prizes.length?'prize':''} ${prizes.length>1?'multi':''}">
-      ${prizes.length ? prizes.map(p=>p.icon).join('') : (full?'☀️':'')}
-      <span class="n">${i}</span></div>`;
+    const face = prizes.length ? prizes.map(p=>p.icon).join('') : (full ? '☀️' : '');
+    // 必须写成一行：模板里的换行和缩进会变成内容的一部分，
+    // 在 flex 容器里生成额外行盒，把图标顶得偏上、格子纵向溢出
+    cells += `<div class="acell${full?' full':''}${prizes.length?' prize':''}${prizes.length>1?' p'+prizes.length:''}"><span class="f">${face}</span><span class="n">${i}</span></div>`;
   }
 
   el('main').innerHTML = `
