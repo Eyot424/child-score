@@ -371,17 +371,21 @@ const CONFIG = {
   sunRewards:[
     {id:'snack',  label:'零食',               icon:'🍭', cost:1,  weeklyLimit:2}
   ],
+  /* 一档里可以有多个 options —— 攒到了只能挑一个，不是全给 */
   milestones:[
-    {id:'toy',  label:'玩具',   icon:'🧸', threshold:10},
-    {id:'park', label:'游乐场', icon:'🎡', threshold:20},
-    {id:'trip', label:'旅游',   icon:'✈️', threshold:60}
+    {id:'toy',  threshold:10, options:[{label:'小玩具',   icon:'🧸'}]},
+    {id:'big',  threshold:20, options:[{label:'大玩具',   icon:'🎁'}, {label:'游乐场', icon:'🎡'}]},
+    {id:'trip', threshold:60, options:[{label:'出国旅游', icon:'✈️'}]}
   ]
 };
 const slotById = id => CONFIG.slots.find(s=>s.id===id) || {label:id, icon:''};
+const msLabel  = m => m.options.map(o=>o.label).join(' 或 ');
+const msIcons  = m => m.options.map(o=>o.icon).join('');
 
 /* ── 数据：只有真正需要持久化的四样 ── */
 function defaults(){
-  return { days:{}, ledger:[], fulfilled:{toy:0, park:0, trip:0}, meta:{ savedAt:null } };
+  const f = {}; CONFIG.milestones.forEach(m=>f[m.id]=0);
+  return { days:{}, ledger:[], fulfilled:f, meta:{ savedAt:null } };
 }
 
 /* ═══════════════ 日期工具 ═══════════════ */
@@ -430,6 +434,7 @@ function normalize(d){
     id:     e.id || `lg-${i}-${e.date||''}-${e.itemId||e.type||''}`,
     at:     e.at || (e.date||'1970-01-01') + 'T12:00:00.000Z',
     date:   e.date, type: e.type, itemId: e.itemId,
+    opt:    e.opt || undefined,          // 二选一里程碑实际给了哪个
     stars:  e.stars || 0, suns: e.suns || 0
   }));
   CONFIG.milestones.forEach(m=>{ out.fulfilled[m.id] = Math.max(0, Number(d.fulfilled?.[m.id]) || 0); });
@@ -672,7 +677,8 @@ function milestoneState(){
     const earned = Math.floor(suns / m.threshold);
     const done   = DB.fulfilled[m.id] || 0;
     const next   = (earned+1) * m.threshold;
-    return {...m, earned, done, pending:Math.max(0, earned-done), need:next-suns};
+    return {...m, label:msLabel(m), icon:msIcons(m),
+            earned, done, pending:Math.max(0, earned-done), need:next-suns};
   });
 }
 function weekSpent(itemId, date){
@@ -814,7 +820,8 @@ function sunNote(day, r){
   return `还差 ${CONFIG.sunThreshold - r.stars} 颗就有太阳`;
 }
 function nextGoalCard(){
-  const ms = milestoneState().filter(m=>m.need>0).sort((a,b)=>a.need-b.need)[0];
+  const ms =     // 小玩具(10) 和大档(20) 会在第 20 个太阳同时到期，need 相同时优先报大的那个
+    milestoneState().filter(m=>m.need>0).sort((a,b)=>a.need-b.need || b.threshold-a.threshold)[0];
   if(!ms) return '';
   return `<div class="card"><h2>下一个目标</h2>
     <div style="font-size:22px;font-weight:900;text-align:center;padding:8px 0">
@@ -866,7 +873,7 @@ function bonusSun(){
 function checkUnlock(before){
   const after = milestoneState();
   after.forEach((m,i)=>{
-    if(m.earned > before[i]) celebrate(m.icon, '解锁了'+m.label+'！', '攒够 '+m.threshold+' 个太阳');
+    if(m.earned > before[i]) celebrate(msIcons(m), '解锁了'+msLabel(m)+'！', '攒够 '+m.threshold+' 个太阳');
   });
 }
 
@@ -937,16 +944,20 @@ function vAlbum(){
   const round  = suns===0 ? 0 : Math.floor((suns-1)/60);
   const inRnd  = suns - round*60;                 // 1..60
   const ms     = CONFIG.milestones;
-  const next   = milestoneState().filter(m=>m.need>0).sort((a,b)=>a.need-b.need)[0];
+  const next   =     // 小玩具(10) 和大档(20) 会在第 20 个太阳同时到期，need 相同时优先报大的那个
+    milestoneState().filter(m=>m.need>0).sort((a,b)=>a.need-b.need || b.threshold-a.threshold)[0];
 
   let cells='';
   for(let i=1;i<=60;i++){
-    const prizes = ms.filter(m=>i % m.threshold === 0);
+    // 第 60 格同时是 10/20/60 的倍数，四个奖品堆一格没法看 ——
+    // 只标该格里门槛最高的那一档，细节留给商店页
+    const hit = ms.filter(m=>i % m.threshold === 0).sort((a,b)=>b.threshold-a.threshold)[0];
     const full = i <= inRnd;
-    const face = prizes.length ? prizes.map(p=>p.icon).join('') : (full ? '☀️' : '');
+    const face = hit ? msIcons(hit) : (full ? '☀️' : '');
+    const n = hit ? hit.options.length : 0;
     // 必须写成一行：模板里的换行和缩进会变成内容的一部分，
     // 在 flex 容器里生成额外行盒，把图标顶得偏上、格子纵向溢出
-    cells += `<div class="acell${full?' full':''}${prizes.length?' prize':''}${prizes.length>1?' p'+prizes.length:''}"><span class="f">${face}</span><span class="n">${i}</span></div>`;
+    cells += `<div class="acell${full?' full':''}${hit?' prize':''}${n>1?' p'+n:''}"><span class="f">${face}</span><span class="n">${i}</span></div>`;
   }
 
   el('main').innerHTML = `
@@ -957,7 +968,7 @@ function vAlbum(){
     <div class="album" style="margin-bottom:12px">${cells}</div>
     <hr>
     <div class="row">
-      ${ms.map(m=>`<div class="chip" style="font-size:14px">${m.icon} 每 ${m.threshold} 个 → ${esc(m.label)}</div>`).join('')}
+      ${ms.map(m=>`<div class="chip" style="font-size:14px">${msIcons(m)} 每 ${m.threshold} 个 → ${esc(msLabel(m))}</div>`).join('')}
     </div>
   </div>`;
 }
@@ -985,6 +996,12 @@ function vShop(){
   const pend = ms.filter(m=>m.pending>0);
 
   const hist = DB.ledger.slice(-8).reverse().map(e=>{
+    if(e.type==='milestone'){
+      const m = CONFIG.milestones.find(x=>x.id===e.itemId);
+      const o = m && m.options.find(x=>x.label===e.opt);
+      return `<tr><td class="muted">${e.date}</td><td>${o?o.icon:'🎁'} ${esc(e.opt||'')}</td>
+        <td style="text-align:right;font-weight:800" class="muted">里程碑</td></tr>`;
+    }
     const it = findItem(e.itemId);
     const amt = e.suns!=null&&e.suns<0 ? e.suns+' ☀️' : (e.stars||0)+' ⭐';
     return `<tr><td class="muted">${e.date}</td><td>${it?it.icon+' '+esc(it.label):e.type}</td>
@@ -994,11 +1011,15 @@ function vShop(){
   el('main').innerHTML = `
   ${pend.length?`<div class="card"><h2>已解锁，等着兑现 🎁</h2>
     ${pend.map(m=>`<div class="pending">
-      <span style="font-size:30px">${m.icon}</span>
-      <span style="font-size:18px;font-weight:800">${esc(m.label)} × ${m.pending}</span>
-      <button class="btn sm primary" style="margin-left:auto" onclick="fulfill('${m.id}')">已经给她了</button>
+      <span style="font-size:30px">${msIcons(m)}</span>
+      <span style="font-size:18px;font-weight:800">${esc(msLabel(m))} × ${m.pending}</span>
+      <span class="g" style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
+        ${m.options.map((o,i)=>`<button class="btn sm primary" onclick="fulfill('${m.id}',${i})">${o.icon} ${
+          m.options.length>1 ? '选了'+esc(o.label) : '已经给她了'}</button>`).join('')}
+      </span>
     </div>`).join('')}
-    <div class="muted">解锁 ≠ 已经买了。真的给了她之后再点这个按钮。</div></div>`:''}
+    <div class="muted">解锁 ≠ 已经买了。真的给了她之后再点。${
+      pend.some(m=>m.options.length>1) ? '<b>大玩具和游乐场是二选一，点哪个就记哪个。</b>' : ''}</div></div>`:''}
 
   <div class="card">
     <h2>太阳换零食 <span class="chip" style="margin-left:auto;font-size:16px">☀️ ${suns}</span></h2>
@@ -1017,9 +1038,10 @@ function vShop(){
     <h2>太阳换大东西</h2>
     <div class="shop">
       ${ms.map(m=>`<div class="item">
-        <div class="t">${m.icon} ${esc(m.label)}</div>
+        <div class="t">${msIcons(m)} ${esc(msLabel(m))}</div>
         <div class="c">每 ${m.threshold} ☀️</div>
-        <div class="muted">${m.need>0?`还差 ${m.need} 个`:'可以换啦'} · 已解锁 ${m.earned} 次</div>
+        <div class="muted">${m.need>0?`还差 ${m.need} 个`:'可以换啦'} · 已解锁 ${m.earned} 次${
+          m.options.length>1 ? ' · <b>二选一</b>' : ''}</div>
       </div>`).join('')}
     </div>
   </div>
@@ -1040,9 +1062,13 @@ function redeem(id, kind){
   DB.ledger.push(e); save(); render();
   toast('换好啦！' + it.icon);
 }
-function fulfill(id){
+function fulfill(id, optIndex){
+  const m = CONFIG.milestones.find(x=>x.id===id); if(!m) return;
+  const opt = m.options[optIndex||0] || m.options[0];
   DB.fulfilled[id] = (DB.fulfilled[id]||0) + 1;
-  save(); render(); toast('已记录 ✓');
+  // 记下二选一到底选了哪个，不然事后查不出来
+  DB.ledger.push({id:uid(), at:stamp(), date:todayStr(), type:'milestone', itemId:id, opt:opt.label, stars:0, suns:0});
+  save(); render(); toast('已记录：' + opt.icon + ' ' + opt.label);
 }
 
 /* ── 设置：只有 token。规则要改直接改代码，不做成界面 ── */
