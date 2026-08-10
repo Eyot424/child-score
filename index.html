@@ -90,8 +90,9 @@ nav button.on{background:var(--yellow)}
   background:var(--gray-l);border:3px solid var(--gray);border-radius:18px;
   padding:20px 8px 16px;text-align:center;transition:.14s;
 }
-.slot .ic{font-size:40px;line-height:1;filter:grayscale(1);opacity:.45;transition:.14s}
-.slot .nm{margin-top:9px;font-size:15px;font-weight:800;color:#8a99a3;transition:.14s}
+/* 未完成时不能太淡 —— 6 岁孩子要能认出图标是什么 */
+.slot .ic{font-size:40px;line-height:1;filter:grayscale(.6);opacity:.62;transition:.14s}
+.slot .nm{margin-top:9px;font-size:15px;font-weight:800;color:#74838f;transition:.14s}
 .slot.on{background:#FFF8D6;border-color:var(--ink);box-shadow:0 4px 0 var(--ink);transform:translateY(-2px)}
 .slot.on .ic{filter:none;opacity:1}
 .slot.on .nm{color:var(--ink)}
@@ -122,35 +123,40 @@ nav button.on{background:var(--yellow)}
 .pen button.on{background:#FFE3E5;border-color:var(--red);color:var(--red);font-weight:800}
 
 /* ── 日历 ── */
-.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
-.cal .dow{text-align:center;font-size:13px;font-weight:800;color:#8a99a3;padding-bottom:4px}
+/* 限宽居中：不限的话 7 列铺满 1180px，格子会变成 150px，整月高达 900px */
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;max-width:640px;margin:0 auto}
+.cal .dow{text-align:center;font-size:13px;font-weight:800;color:#74838f;padding-bottom:4px;min-width:0}
 .cal .cell{
   aspect-ratio:1;border:2px solid var(--gray-l);border-radius:14px;
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
   cursor:pointer;transition:.12s;background:#fff;
+  min-width:0;                      /* 同 .acell：不加的话图标会把格子撑破容器 */
 }
 .cal .cell:hover{border-color:var(--blue)}
 .cal .cell.pad{border:none;background:none;cursor:default}
 .cal .cell.fut{opacity:.3;cursor:not-allowed}
 .cal .cell.fut:hover{border-color:var(--gray-l)}
 .cal .cell.today{border-color:var(--blue);border-width:3px;background:#EAF6FE}
-.cal .cell .d{font-size:12px;font-weight:700;color:#8a99a3}
-.cal .cell .m{font-size:22px;line-height:1}
-.cal .cell .s{font-size:12px;font-weight:800;color:var(--blue-d)}
+.cal .cell .d{font-size:13px;font-weight:700;color:#74838f}
+.cal .cell .m{font-size:27px;line-height:1}
+.cal .cell .s{font-size:14px;font-weight:800;color:var(--blue-d)}
 
 /* ── 收集册 ── */
-.album{display:grid;grid-template-columns:repeat(10,1fr);column-gap:9px;row-gap:26px}
+/* 同样限宽：不限的话 60 格铺满会有 800px 高，孩子要滚半天 */
+.album{display:grid;grid-template-columns:repeat(10,1fr);column-gap:9px;row-gap:26px;
+  max-width:780px;margin:0 auto}
 @media(max-width:700px){.album{grid-template-columns:repeat(5,1fr)}}
 .acell{
   aspect-ratio:1;border-radius:50%;border:3px solid var(--gray);
   background:var(--gray-l);display:flex;align-items:center;justify-content:center;
-  font-size:22px;position:relative;transition:.14s;
+  font-size:27px;position:relative;transition:.14s;
   min-width:0;                      /* grid 项目默认 min-width:auto，会被内容撑破容器 */
 }
+.acell.multi{font-size:16px;letter-spacing:-1px}   /* 一格里两三个奖品图标，得缩小才塞得下 */
 .acell.full{background:#FFF3C4;border-color:var(--ink)}
 .acell.prize{border-color:var(--pink);border-width:4px;background:#FFF0F6}
 .acell.prize.full{background:var(--yellow)}
-.acell .n{position:absolute;bottom:-16px;font-size:10px;font-weight:800;color:#9aa8b2}
+.acell .n{position:absolute;bottom:-17px;font-size:11px;font-weight:800;color:#8494a0}
 .goal{
   background:var(--pink);border:3px solid var(--ink);border-radius:18px;
   padding:16px 20px;text-align:center;font-size:22px;font-weight:900;margin-bottom:26px;
@@ -158,8 +164,11 @@ nav button.on{background:var(--yellow)}
 }
 
 /* ── 商店 ── */
-.shop{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px}
+/* 用 flex 不用 auto-fill 的 grid：只有一件商品时，grid 会把它孤零零丢在
+   最左边、右边留 800px 空白，看着像坏了 */
+.shop{display:flex;flex-wrap:wrap;gap:16px}
 .item{
+  flex:1 1 240px;max-width:330px;
   border:3px solid var(--ink);border-radius:18px;padding:18px;background:#fff;
   box-shadow:var(--shadow);display:flex;flex-direction:column;gap:10px;
 }
@@ -168,6 +177,9 @@ nav button.on{background:var(--yellow)}
 .item .c{font-size:26px;font-weight:900;color:var(--blue-d)}
 .pending{background:#FFF3C4;border:3px solid var(--ink);border-radius:16px;padding:14px 18px;
   display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:12px;box-shadow:var(--shadow)}
+/* 重要提示不能用 .muted 的小灰字，会被直接忽略 */
+.note{background:#FFF3C4;border:2px solid var(--ink);border-radius:12px;
+  padding:11px 14px;font-size:14px;font-weight:700;margin-top:14px;line-height:1.5}
 
 /* ── 设置 ── */
 .field{display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap}
@@ -218,6 +230,13 @@ table.rules td{padding:6px 8px;border-bottom:1px solid var(--gray-l)}
   .card{padding:16px}
   .wrap{padding:0 14px 50px}
   .goal{font-size:17px;padding:13px 14px}
+  .cal{gap:5px}
+  .cal .cell{border-radius:10px}
+  .cal .cell .m{font-size:19px}
+  .cal .cell .d{font-size:11px}
+  .cal .cell .s{font-size:11px}
+  .cal .dow{font-size:11px}
+  .item{max-width:none}
 }
 /* ── 存储状态横幅 ── */
 .bnr{
@@ -905,7 +924,7 @@ function vAlbum(){
   for(let i=1;i<=60;i++){
     const prizes = ms.filter(m=>i % m.threshold === 0);
     const full = i <= inRnd;
-    cells += `<div class="acell ${full?'full':''} ${prizes.length?'prize':''}">
+    cells += `<div class="acell ${full?'full':''} ${prizes.length?'prize':''} ${prizes.length>1?'multi':''}">
       ${prizes.length ? prizes.map(p=>p.icon).join('') : (full?'☀️':'')}
       <span class="n">${i}</span></div>`;
   }
@@ -964,7 +983,7 @@ function vShop(){
   <div class="card">
     <h2>太阳换零食 <span class="chip" style="margin-left:auto;font-size:16px">☀️ ${suns}</span></h2>
     <div class="shop">${DB.config.sunRewards.map(it=>itemCard(it,'sun',suns)).join('')}</div>
-    <div class="muted" style="margin-top:14px">
+    <div class="note">
       ⚠️ 太阳花掉就少一个，收集册也会退一格 —— 吃零食会让玩具、游乐场、旅游都变慢。
     </div>
   </div>
