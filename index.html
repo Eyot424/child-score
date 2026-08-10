@@ -58,7 +58,11 @@ nav button.on{background:var(--yellow)}
 .card h2{font-size:20px;margin-bottom:16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .muted{color:#6b7c86;font-size:13px;font-weight:600}
 .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
-.grid2{display:grid;grid-template-columns:1.15fr .85fr;gap:22px;align-items:start}
+/* 两列各自按内容高度排会导致底部参差，所以让列拉伸、最后一张卡吃掉余量 */
+.grid2{display:grid;grid-template-columns:1.15fr .85fr;gap:22px}
+.grid2 > div{display:flex;flex-direction:column;gap:22px}
+.grid2 > div > .card{margin-bottom:0}
+.grid2 > div > .card:last-child{flex:1}
 @media(max-width:900px){.grid2{grid-template-columns:1fr}}
 
 /* ── 按钮 ── */
@@ -673,9 +677,7 @@ function vToday(){
 
         <div class="tally">
           <div class="big">${r.stars} 颗 ⭐</div>
-          <div class="sun ${r.sun?'yes':'no'}">
-            ${r.sun ? '☀️ 拿到太阳了！' : `还差 ${Math.max(0,DB.config.sunThreshold-r.stars)} 颗就有太阳`}
-          </div>
+          <div class="sun ${r.sun?'yes':'no'}">${sunNote(day, r)}</div>
         </div>
 
         <h2 style="font-size:16px">今天发生了</h2>
@@ -710,6 +712,14 @@ function vToday(){
       ${nextGoalCard()}
     </div>
   </div>`;
+}
+/* 太阳没拿到，得说清楚是「星星不够」还是「被扣分挡了」——
+   否则星星够了却被失控挡掉时，会显示「还差 0 颗就有太阳」这种废话 */
+function sunNote(day, r){
+  if(r.sun) return '☀️ 拿到太阳了！';
+  if(day.hit) return '✋ 打人了，今天没有太阳';
+  if(day.meltdown) return '😭 情绪失控，今天没有太阳';
+  return `还差 ${DB.config.sunThreshold - r.stars} 颗就有太阳`;
 }
 function nextGoalCard(){
   const ms = milestoneState().filter(m=>m.need>0).sort((a,b)=>a.need-b.need)[0];
