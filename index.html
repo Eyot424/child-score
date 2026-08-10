@@ -1,0 +1,1070 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>徐瑾熙的星星</title>
+<style>
+:root{
+  --blue:#00A0E9; --blue-d:#0077B6; --blue-l:#7FD0F5;
+  --red:#E60012; --yellow:#FFD900; --pink:#F19EC2;
+  --ink:#1A1A1A; --paper:#FFFFFF; --bg:#EAF6FE;
+  --gray:#B9C6CE; --gray-l:#F0F4F7;
+  --shadow:0 4px 0 var(--ink);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:"PingFang SC","Microsoft YaHei","Hiragino Sans GB",system-ui,sans-serif;
+  color:var(--ink); background:var(--bg);
+  -webkit-font-smoothing:antialiased;
+}
+/* ── 背景层 ── */
+#bgLayer{
+  position:fixed; inset:0; z-index:-2;
+  background-color:var(--bg);
+  background-size:cover; background-position:center;
+}
+#bgPattern{
+  position:fixed; inset:0; z-index:-1; pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140' viewBox='0 0 140 140'%3E%3Cg fill='none' stroke='%2300A0E9' stroke-opacity='.16' stroke-width='2.5'%3E%3Ccircle cx='30' cy='30' r='11'/%3E%3Cpath d='M19 27h22M30 41v7'/%3E%3Ccircle cx='30' cy='50' r='3'/%3E%3Ccircle cx='100' cy='95' r='11'/%3E%3Cpath d='M89 92h22M100 106v7'/%3E%3Ccircle cx='100' cy='115' r='3'/%3E%3C/g%3E%3Cg fill='%2300A0E9' fill-opacity='.10'%3E%3Ccircle cx='105' cy='25' r='5'/%3E%3Ccircle cx='25' cy='105' r='5'/%3E%3Ccircle cx='70' cy='68' r='3.5'/%3E%3C/g%3E%3C/svg%3E");
+}
+#bgVeil{position:fixed;inset:0;z-index:-1;background:#fff;opacity:0;pointer-events:none}
+
+/* ── 骨架 ── */
+.wrap{max-width:1180px;margin:0 auto;padding:0 24px 60px}
+header{
+  background:var(--blue); border-bottom:4px solid var(--ink);
+  padding:14px 0; margin-bottom:24px;
+}
+.hd{max-width:1180px;margin:0 auto;padding:0 24px;display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:12px;font-size:24px;font-weight:800;color:#fff;
+  text-shadow:2px 2px 0 rgba(0,0,0,.25)}
+.bell{width:34px;height:34px;flex:none}
+.totals{display:flex;gap:10px;margin-left:auto}
+.chip{
+  background:#fff;border:3px solid var(--ink);border-radius:999px;
+  padding:6px 16px;font-size:19px;font-weight:800;display:flex;align-items:center;gap:7px;
+  box-shadow:0 3px 0 rgba(0,0,0,.25);
+}
+nav{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:22px}
+nav button{
+  font:inherit;font-weight:700;font-size:15px;cursor:pointer;
+  background:#fff;border:3px solid var(--ink);border-radius:14px;
+  padding:9px 20px;box-shadow:0 3px 0 var(--ink);transition:.12s;
+}
+nav button:hover{transform:translateY(-1px);box-shadow:0 4px 0 var(--ink)}
+nav button:active{transform:translateY(3px);box-shadow:none}
+nav button.on{background:var(--yellow)}
+
+.card{
+  background:#fff;border:3px solid var(--ink);border-radius:20px;
+  padding:24px;box-shadow:var(--shadow);margin-bottom:22px;
+}
+.card h2{font-size:20px;margin-bottom:16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.muted{color:#6b7c86;font-size:13px;font-weight:600}
+.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.grid2{display:grid;grid-template-columns:1.15fr .85fr;gap:22px;align-items:start}
+@media(max-width:900px){.grid2{grid-template-columns:1fr}}
+
+/* ── 按钮 ── */
+.btn{
+  font:inherit;font-weight:800;font-size:16px;cursor:pointer;
+  background:#fff;border:3px solid var(--ink);border-radius:14px;
+  padding:11px 22px;box-shadow:0 4px 0 var(--ink);transition:.1s;
+}
+.btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 5px 0 var(--ink)}
+.btn:active:not(:disabled){transform:translateY(4px);box-shadow:none}
+.btn:disabled{opacity:.4;cursor:not-allowed;box-shadow:0 4px 0 var(--gray);border-color:var(--gray)}
+.btn.primary{background:var(--yellow)}
+.btn.blue{background:var(--blue);color:#fff}
+.btn.sm{font-size:13px;padding:7px 14px;border-width:2px;box-shadow:0 3px 0 var(--ink)}
+.btn.ghost{background:var(--gray-l);font-weight:700}
+.btn.danger{background:var(--red);color:#fff}
+
+/* ── 今日格子 ── */
+.slots{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media(max-width:560px){.slots{grid-template-columns:repeat(2,1fr)}}
+.slot{
+  position:relative;cursor:pointer;user-select:none;
+  background:var(--gray-l);border:3px solid var(--gray);border-radius:18px;
+  padding:20px 8px 16px;text-align:center;transition:.14s;
+}
+.slot .ic{font-size:40px;line-height:1;filter:grayscale(1);opacity:.45;transition:.14s}
+.slot .nm{margin-top:9px;font-size:15px;font-weight:800;color:#8a99a3;transition:.14s}
+.slot.on{background:#FFF8D6;border-color:var(--ink);box-shadow:0 4px 0 var(--ink);transform:translateY(-2px)}
+.slot.on .ic{filter:none;opacity:1}
+.slot.on .nm{color:var(--ink)}
+.slot .tick{
+  position:absolute;top:-11px;right:-11px;width:34px;height:34px;border-radius:50%;
+  background:var(--yellow);border:3px solid var(--ink);display:none;
+  align-items:center;justify-content:center;font-size:17px;
+}
+.slot.on .tick{display:flex}
+.slot.dis{opacity:.35;pointer-events:none}
+
+/* ── 今日汇总 ── */
+.tally{
+  background:linear-gradient(180deg,#fff,#EAF6FE);
+  border:3px dashed var(--blue);border-radius:18px;
+  padding:18px;text-align:center;margin:18px 0;
+}
+.tally .big{font-size:44px;font-weight:900;line-height:1.1}
+.tally .sun{font-size:19px;font-weight:800;margin-top:6px}
+.tally .sun.yes{color:var(--red)}
+.tally .sun.no{color:#8a99a3}
+
+.pen{display:flex;gap:12px;flex-wrap:wrap}
+.pen button{
+  font:inherit;font-size:14px;font-weight:700;cursor:pointer;
+  background:#fff;border:2px solid var(--gray);border-radius:12px;padding:9px 16px;
+}
+.pen button.on{background:#FFE3E5;border-color:var(--red);color:var(--red);font-weight:800}
+
+/* ── 日历 ── */
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
+.cal .dow{text-align:center;font-size:13px;font-weight:800;color:#8a99a3;padding-bottom:4px}
+.cal .cell{
+  aspect-ratio:1;border:2px solid var(--gray-l);border-radius:14px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  cursor:pointer;transition:.12s;background:#fff;
+}
+.cal .cell:hover{border-color:var(--blue)}
+.cal .cell.pad{border:none;background:none;cursor:default}
+.cal .cell.fut{opacity:.3;cursor:not-allowed}
+.cal .cell.fut:hover{border-color:var(--gray-l)}
+.cal .cell.today{border-color:var(--blue);border-width:3px;background:#EAF6FE}
+.cal .cell .d{font-size:12px;font-weight:700;color:#8a99a3}
+.cal .cell .m{font-size:22px;line-height:1}
+.cal .cell .s{font-size:12px;font-weight:800;color:var(--blue-d)}
+
+/* ── 收集册 ── */
+.album{display:grid;grid-template-columns:repeat(10,1fr);gap:9px}
+@media(max-width:700px){.album{grid-template-columns:repeat(5,1fr)}}
+.acell{
+  aspect-ratio:1;border-radius:50%;border:3px solid var(--gray);
+  background:var(--gray-l);display:flex;align-items:center;justify-content:center;
+  font-size:22px;position:relative;transition:.14s;
+}
+.acell.full{background:#FFF3C4;border-color:var(--ink)}
+.acell.prize{border-color:var(--pink);border-width:4px;background:#FFF0F6}
+.acell.prize.full{background:var(--yellow)}
+.acell .n{position:absolute;bottom:-16px;font-size:10px;font-weight:800;color:#9aa8b2}
+.goal{
+  background:var(--pink);border:3px solid var(--ink);border-radius:18px;
+  padding:16px 20px;text-align:center;font-size:22px;font-weight:900;margin-bottom:26px;
+  box-shadow:var(--shadow);
+}
+
+/* ── 商店 ── */
+.shop{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px}
+.item{
+  border:3px solid var(--ink);border-radius:18px;padding:18px;background:#fff;
+  box-shadow:var(--shadow);display:flex;flex-direction:column;gap:10px;
+}
+.item.off{opacity:.45;box-shadow:0 4px 0 var(--gray);border-color:var(--gray)}
+.item .t{font-size:18px;font-weight:800;display:flex;align-items:center;gap:9px}
+.item .c{font-size:26px;font-weight:900;color:var(--blue-d)}
+.pending{background:#FFF3C4;border:3px solid var(--ink);border-radius:16px;padding:14px 18px;
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:12px;box-shadow:var(--shadow)}
+
+/* ── 设置 ── */
+.field{display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+.field label{font-size:14px;font-weight:700;min-width:150px}
+input[type=text],input[type=number],input[type=date]{
+  font:inherit;font-size:15px;padding:8px 12px;border:2px solid var(--gray);
+  border-radius:10px;background:#fff;
+}
+input[type=text]:focus,input[type=number]:focus{outline:none;border-color:var(--blue)}
+input.ic{width:64px;text-align:center;font-size:20px}
+input.lbl{width:170px}
+input.num{width:92px}
+hr{border:none;border-top:2px dashed var(--gray-l);margin:22px 0}
+table.rules{width:100%;border-collapse:collapse;font-size:14px}
+table.rules td{padding:6px 8px;border-bottom:1px solid var(--gray-l)}
+
+/* ── 提示 / 庆祝 ── */
+#toast{
+  position:fixed;left:50%;bottom:36px;transform:translate(-50%,26px);
+  background:var(--ink);color:#fff;padding:13px 26px;border-radius:999px;
+  font-weight:800;font-size:15px;opacity:0;pointer-events:none;transition:.28s;z-index:99;
+}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+#celeb{
+  position:fixed;inset:0;background:rgba(0,160,233,.94);z-index:100;
+  display:none;flex-direction:column;align-items:center;justify-content:center;gap:18px;
+  color:#fff;text-align:center;cursor:pointer;
+}
+#celeb.show{display:flex;animation:pop .45s ease}
+#celeb .e{font-size:110px;animation:spin 1.1s ease}
+#celeb .t1{font-size:38px;font-weight:900;text-shadow:3px 3px 0 rgba(0,0,0,.25)}
+#celeb .t2{font-size:18px;font-weight:700;opacity:.9}
+@keyframes pop{from{opacity:0}to{opacity:1}}
+@keyframes spin{from{transform:rotate(-25deg) scale(.3)}to{transform:rotate(0) scale(1)}}
+.hidden{display:none !important}
+/* ── 存储状态横幅 ── */
+.bnr{
+  border:3px solid var(--ink);border-radius:16px;padding:14px 20px;margin-bottom:20px;
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;box-shadow:var(--shadow);font-weight:700;
+}
+.bnr.warn{background:#FFE9A8}
+.bnr.bad{background:#FFD9DC}
+.bnr.ok{background:#D9F5DD;font-weight:600;font-size:14px;box-shadow:0 3px 0 var(--ink)}
+.bnr .g{margin-left:auto;display:flex;gap:10px;flex-wrap:wrap}
+</style>
+</head>
+<body>
+<div id="bgLayer"></div><div id="bgPattern"></div><div id="bgVeil"></div>
+
+<header>
+  <div class="hd">
+    <div class="brand">
+      <svg class="bell" viewBox="0 0 40 40">
+        <circle cx="20" cy="19" r="13" fill="#FFD900" stroke="#1A1A1A" stroke-width="2.5"/>
+        <path d="M7 15h26" stroke="#1A1A1A" stroke-width="2.5" stroke-linecap="round"/>
+        <path d="M20 25v6" stroke="#1A1A1A" stroke-width="2.5" stroke-linecap="round"/>
+        <circle cx="20" cy="33" r="3.5" fill="#1A1A1A"/>
+      </svg>
+      <span id="brandName">徐瑾熙的星星</span>
+    </div>
+    <div class="totals">
+      <div class="chip">⭐ <span id="tStars">0</span></div>
+      <div class="chip">☀️ <span id="tSuns">0</span></div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div id="banner"></div>
+  <nav id="nav"></nav>
+  <main id="main"></main>
+</div>
+
+<div id="toast"></div>
+<div id="celeb" onclick="this.classList.remove('show')">
+  <div class="e" id="cE">🎉</div>
+  <div class="t1" id="cT1"></div>
+  <div class="t2" id="cT2">点一下继续</div>
+</div>
+
+<script>
+/* ═══════════════ 常量与默认数据 ═══════════════ */
+const VIEWS = [
+  {id:'today', name:'今天'},
+  {id:'cal',   name:'日历'},
+  {id:'album', name:'收集册'},
+  {id:'shop',  name:'商店'},
+  {id:'set',   name:'设置'}
+];
+const KEY = 'jinxi-stars-v1';
+
+function defaults(){
+  const today = fmtDate(new Date());
+  const end = new Date(); end.setDate(end.getDate()+14);
+  return {
+    version:1,
+    child:{ name:'徐瑾熙', startDate:today },
+    config:{
+      slots:[
+        {id:'teeth', label:'刷牙',        icon:'🪥'},
+        {id:'sleep', label:'按时睡觉',    icon:'🛏️'},
+        {id:'study', label:'认真学习',    icon:'📖'},
+        {id:'chore', label:'帮忙干活',    icon:'🧹'},
+        {id:'temper',label:'管好脾气',    icon:'😊'},
+        {id:'meal',  label:'自己好好吃饭',icon:'🍚'}
+      ],
+      sunThreshold:5,
+      penaltyEnabled:false,
+      baselineEndDate:fmtDate(end),
+      starRewards:[
+        {id:'screen', label:'玩 20 分钟电子设备', icon:'📱', cost:1,  weeklyLimit:0},
+        {id:'sunbuy', label:'补一个太阳',         icon:'☀️', cost:20, weeklyLimit:1}
+      ],
+      sunRewards:[
+        {id:'snack',  label:'零食',               icon:'🍭', cost:1,  weeklyLimit:2}
+      ],
+      milestones:[
+        {id:'toy',  label:'玩具',   icon:'🧸', threshold:10},
+        {id:'park', label:'游乐场', icon:'🎡', threshold:20},
+        {id:'trip', label:'旅游',   icon:'✈️', threshold:60}
+      ]
+    },
+    days:{},
+    ledger:[],
+    fulfilled:{toy:0, park:0, trip:0},
+    ui:{ bg:null, veil:0 },
+    meta:{ savedAt:null, fileAt:null, needsGrant:false }
+  };
+}
+
+/* ═══════════════ 日期工具 ═══════════════ */
+function fmtDate(d){
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function parseDate(s){ const [y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d); }
+function todayStr(){ return fmtDate(new Date()); }
+function weekKey(s){                       // 周一为一周之始
+  const d=parseDate(s); const off=(d.getDay()+6)%7;
+  d.setDate(d.getDate()-off); return fmtDate(d);
+}
+function cnDate(s){
+  const d=parseDate(s), w='日一二三四五六'[d.getDay()];
+  return (d.getMonth()+1)+'月'+d.getDate()+'日 星期'+w;
+}
+
+/* ═══════════════ 存储 ═══════════════
+   file:// 下的 localStorage 极不可靠：所有本地网页共用一个 origin，
+   浏览器清理数据 / 退出时清 Cookie / 换浏览器，数据就没了。
+   所以：真正的数据存在磁盘上一个 .json 文件里，localStorage 只做镜像和快速启动。
+   ═══════════════════════════════════ */
+function normalize(d){
+  const base = defaults();
+  // 迁移：零食从「星星换」移到「太阳换」，避免两张表出现同名项
+  if(d.config && Array.isArray(d.config.starRewards)){
+    const kept = d.config.starRewards.filter(r=>r.id!=='snack');
+    d.config.starRewards = kept.length ? kept : base.config.starRewards;
+  }
+  return Object.assign(base, d, {
+    config: Object.assign(base.config, d.config||{}),
+    ui:     Object.assign(base.ui,     d.ui||{}),
+    fulfilled: Object.assign(base.fulfilled, d.fulfilled||{}),
+    meta:   Object.assign(base.meta,   d.meta||{})
+  });
+}
+const Local = {
+  ok: (()=>{ try{ localStorage.setItem('__t','1'); localStorage.removeItem('__t'); return true; }
+             catch(e){ return false; } })(),
+  load(){
+    if(!this.ok) return null;
+    try{ const raw = localStorage.getItem(KEY); return raw ? normalize(JSON.parse(raw)) : null; }
+    catch(e){ console.warn(e); return null; }
+  },
+  save(d){
+    if(!this.ok) return false;
+    try{ localStorage.setItem(KEY, JSON.stringify(d)); return true; }
+    catch(e){ console.error(e); return false; }
+  }
+};
+
+/* ── IndexedDB：只用来记住那个文件的句柄 ── */
+function idb(fn){
+  return new Promise((res,rej)=>{
+    const r = indexedDB.open('jinxi-fs', 1);
+    r.onupgradeneeded = ()=>{ if(!r.result.objectStoreNames.contains('h')) r.result.createObjectStore('h'); };
+    r.onsuccess = ()=>{ try{ fn(r.result, res, rej); }catch(e){ rej(e); } };
+    r.onerror   = ()=>rej(r.error);
+  });
+}
+const idbGet = k => idb((db,res,rej)=>{
+  const q = db.transaction('h','readonly').objectStore('h').get(k);
+  q.onsuccess=()=>res(q.result); q.onerror=()=>rej(q.error);
+}).catch(()=>null);
+const idbPut = (k,v) => idb((db,res,rej)=>{
+  const t = db.transaction('h','readwrite'); t.objectStore('h').put(v,k);
+  t.oncomplete=()=>res(true); t.onerror=()=>rej(t.error);
+}).catch(()=>false);
+
+/* ── 磁盘文件 ── */
+const FS = {
+  supported: typeof window.showSaveFilePicker === 'function',
+  handle: null,
+  name: null,
+
+  async perm(mode){
+    if(!this.handle) return 'none';
+    const o = {mode};
+    if(await this.handle.queryPermission(o) === 'granted') return 'granted';
+    try{ return await this.handle.requestPermission(o); }catch(e){ return 'denied'; }
+  },
+  async bind(){
+    if(!this.supported){ toast('这个浏览器不支持，请用 Chrome 或 Edge'); return; }
+    try{
+      const h = await window.showSaveFilePicker({
+        suggestedName: `${DB.child.name}的星星.json`,
+        types:[{description:'数据文件', accept:{'application/json':['.json']}}]
+      });
+      this.handle = h; this.name = h.name;
+      await idbPut('handle', h);
+      await this.write(DB, true);
+      render(); toast('已绑定：' + h.name);
+    }catch(e){ if(e.name!=='AbortError') toast('绑定失败：'+e.message); }
+  },
+  async open(){
+    if(!this.supported){ toast('这个浏览器不支持，请用「导入备份」'); return; }
+    try{
+      const [h] = await window.showOpenFilePicker({
+        types:[{description:'数据文件', accept:{'application/json':['.json']}}]
+      });
+      this.handle = h; this.name = h.name;
+      await idbPut('handle', h);
+      await this.read(true);
+    }catch(e){ if(e.name!=='AbortError') toast('打开失败：'+e.message); }
+  },
+  async read(adopt){
+    if(await this.perm('read') !== 'granted') return null;
+    try{
+      const txt = await (await this.handle.getFile()).text();
+      if(!txt.trim()) return null;
+      const d = normalize(JSON.parse(txt));
+      if(adopt){ DB = d; Local.save(DB); render(); toast('数据已从文件读回 ✓'); }
+      return d;
+    }catch(e){ console.warn(e); return null; }
+  },
+  async write(d, force){
+    if(!this.handle) return false;
+    if(!force && await this.handle.queryPermission({mode:'readwrite'}) !== 'granted') return false;
+    if(force && await this.perm('readwrite') !== 'granted') return false;
+    try{
+      const w = await this.handle.createWritable();
+      await w.write(JSON.stringify(d, null, 2)); await w.close();
+      DB.meta.fileAt = new Date().toISOString();
+      return true;
+    }catch(e){ console.error(e); return false; }
+  },
+  async restore(){
+    const h = await idbGet('handle');
+    if(!h) return false;
+    this.handle = h; this.name = h.name;
+    if(await h.queryPermission({mode:'readwrite'}) !== 'granted'){
+      DB.meta.needsGrant = true; render(); return false;   // 需要用户点一下授权
+    }
+    const fileData = await this.read(false);
+    if(fileData){
+      // 文件和本地哪个新用哪个，两边都不丢
+      const a = fileData.meta?.savedAt || '', b = DB.meta?.savedAt || '';
+      if(a >= b){ DB = fileData; Local.save(DB); }
+      else { await this.write(DB); }
+    }
+    DB.meta.needsGrant = false; render(); return true;
+  },
+  async grant(){
+    if(await this.perm('readwrite') === 'granted'){ await this.restore(); toast('已连上数据文件 ✓'); }
+    else toast('没有拿到权限');
+  }
+};
+
+let DB = Local.load() || defaults();
+let ST = { view:'today', sel:todayStr(), cal:(()=>{const n=new Date();return {y:n.getFullYear(),m:n.getMonth()};})() };
+
+let fsTimer;
+function save(){
+  DB.meta = DB.meta || {};
+  DB.meta.savedAt = new Date().toISOString();
+  const okLocal = Local.save(DB);
+  clearTimeout(fsTimer);
+  fsTimer = setTimeout(()=>{ FS.write(DB).then(ok=>{ if(ok) paintStatus(); }); }, 400);
+  if(!okLocal && !FS.handle) toast('⚠️ 没能保存！请到设置里绑定数据文件');
+  paintStatus();
+}
+
+/* ═══════════════ 核心计算 ═══════════════
+   星星 / 太阳余额永远从 days + ledger 全量重算，绝不存增量。
+   日历允许改历史，存增量会让所有后续余额静默出错。
+   365 条记录重算不到 1ms。
+   ═════════════════════════════════════ */
+function blankDay(){
+  const s={}; DB.config.slots.forEach(x=>s[x.id]=false);
+  return {slots:s, tantrum:false, meltdown:false, hit:false, bonus:0, exempt:false, settled:false};
+}
+function getDay(date){
+  if(!DB.days[date]) DB.days[date] = blankDay();
+  const d = DB.days[date];
+  DB.config.slots.forEach(x=>{ if(!(x.id in d.slots)) d.slots[x.id]=false; });
+  return d;
+}
+function settleDay(day){
+  const on = DB.config.penaltyEnabled;
+  let stars = DB.config.slots.reduce((n,x)=>n+(day.slots[x.id]?1:0),0) + (day.bonus||0);
+  if(on && day.hit) stars = 0;                       // 打人 → 当天清零（情绪失控保留星星）
+  let sun = stars >= DB.config.sunThreshold;
+  if(on && (day.meltdown || day.hit)) sun = false;   // 失控 / 打人 → 当天无太阳
+  if(day.exempt && !day.hit) sun = true;             // 免检卡
+  const sunPenalty = (on && day.hit) ? 1 : 0;        // 打人额外扣 1 个已有太阳
+  return {stars, sun, sunPenalty};
+}
+function totals(){
+  let stars=0, suns=0;
+  for(const date of Object.keys(DB.days)){
+    const r = settleDay(DB.days[date]);
+    stars += r.stars;
+    suns  += (r.sun?1:0) - r.sunPenalty;
+  }
+  for(const e of DB.ledger){ stars += e.stars||0; suns += e.suns||0; }
+  return {stars:Math.max(0,stars), suns:Math.max(0,suns)};
+}
+function milestoneState(){
+  const {suns} = totals();
+  return DB.config.milestones.map(m=>{
+    const earned = Math.floor(suns / m.threshold);
+    const done   = DB.fulfilled[m.id] || 0;
+    const next   = (earned+1) * m.threshold;
+    return {...m, earned, done, pending:Math.max(0, earned-done), need:next-suns};
+  });
+}
+function weekSpent(itemId, date){
+  const wk = weekKey(date || todayStr());
+  return DB.ledger.filter(e=>e.type==='redeem' && e.itemId===itemId && weekKey(e.date)===wk).length;
+}
+
+/* ═══════════════ 渲染 ═══════════════ */
+function render(){
+  const t = totals();
+  el('tStars').textContent = t.stars;
+  el('tSuns').textContent  = t.suns;
+  el('brandName').textContent = DB.child.name + '的星星';
+  document.title = DB.child.name + '的星星';
+
+  el('nav').innerHTML = VIEWS.map(v=>
+    `<button class="${ST.view===v.id?'on':''}" onclick="go('${v.id}')">${v.name}</button>`).join('');
+
+  ({today:vToday, cal:vCal, album:vAlbum, shop:vShop, set:vSet})[ST.view]();
+  applyBg(); paintStatus();
+}
+/* 数据存哪儿了 —— 永远让用户看得见 */
+function paintStatus(){
+  const b = el('banner'); if(!b) return;
+  const t = DB.meta?.savedAt ? new Date(DB.meta.savedAt).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'}) : '—';
+  if(DB.meta?.needsGrant){
+    b.innerHTML = `<div class="bnr warn">🔌 数据文件还没连上（${esc(FS.name||'')}）
+      <span class="g"><button class="btn sm primary" onclick="FS.grant()">点这里连上</button></span></div>`;
+  }else if(FS.handle){
+    b.innerHTML = `<div class="bnr ok">💾 数据存在文件 <b>${esc(FS.name)}</b> 里 · 上次保存 ${t}</div>`;
+  }else if(!Local.ok){
+    b.innerHTML = `<div class="bnr bad">🚨 这个浏览器不让本地网页存数据，<b>现在录的东西刷新就会没</b>
+      <span class="g"><button class="btn sm primary" onclick="FS.bind()">绑定数据文件</button></span></div>`;
+  }else{
+    b.innerHTML = `<div class="bnr warn">⚠️ 数据只存在浏览器里，清理浏览数据就会丢
+      <span class="g">
+        <button class="btn sm primary" onclick="FS.bind()">存到文件（推荐）</button>
+        <button class="btn sm ghost" onclick="FS.open()">打开已有文件</button>
+      </span></div>`;
+  }
+}
+function go(v){ ST.view=v; render(); window.scrollTo(0,0); }
+function el(id){ return document.getElementById(id); }
+function esc(s){ return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+/* ── 今天 ── */
+function vToday(){
+  const date = ST.sel, day = getDay(date), r = settleDay(day);
+  const isToday = date === todayStr();
+  const future  = date > todayStr();
+  const base = DB.config.penaltyEnabled ? '' :
+    `<div class="muted" style="margin-top:10px">🌱 基线期进行中（至 ${DB.config.baselineEndDate}）—— 扣分只记录，不生效</div>`;
+
+  el('main').innerHTML = `
+  <div class="grid2">
+    <div>
+      <div class="card">
+        <h2>
+          <button class="btn sm ghost" onclick="shiftDay(-1)">◀</button>
+          <span style="flex:1;text-align:center">${cnDate(date)}${isToday?' · 今天':''}</span>
+          <button class="btn sm ghost" onclick="shiftDay(1)" ${future?'disabled':''}>▶</button>
+          ${isToday?'':'<button class="btn sm" onclick="jumpToday()">回到今天</button>'}
+        </h2>
+
+        <div class="slots">
+          ${DB.config.slots.map(s=>`
+            <div class="slot ${day.slots[s.id]?'on':''} ${future?'dis':''}" onclick="toggleSlot('${s.id}')">
+              <div class="tick">⭐</div>
+              <div class="ic">${s.icon}</div>
+              <div class="nm">${esc(s.label)}</div>
+            </div>`).join('')}
+        </div>
+
+        <div class="tally">
+          <div class="big">${r.stars} 颗 ⭐</div>
+          <div class="sun ${r.sun?'yes':'no'}">
+            ${r.sun ? '☀️ 拿到太阳了！' : `还差 ${Math.max(0,DB.config.sunThreshold-r.stars)} 颗就有太阳`}
+          </div>
+        </div>
+
+        <h2 style="font-size:16px">今天发生了</h2>
+        <div class="pen">
+          <button class="${day.tantrum?'on':''}"  onclick="tog('tantrum')">😤 小脾气</button>
+          <button class="${day.meltdown?'on':''}" onclick="tog('meltdown')">😭 情绪失控</button>
+          <button class="${day.hit?'on':''}"      onclick="tog('hit')">✋ 打人</button>
+          <button class="${day.exempt?'on':''}"   onclick="tog('exempt')">🎫 免检卡</button>
+        </div>
+        ${base}
+      </div>
+    </div>
+
+    <div>
+      <div class="card">
+        <h2>规则</h2>
+        <table class="rules">
+          <tr><td>😤 小脾气</td><td class="muted">「管好脾气」那颗星拿不到</td></tr>
+          <tr><td>😭 情绪失控</td><td class="muted">当天没有太阳，星星保留</td></tr>
+          <tr><td>✋ 打人</td><td class="muted">当天星星清零，再扣 1 个太阳</td></tr>
+        </table>
+        <div style="margin-top:14px;padding:12px;background:#EAF6FE;border-radius:12px;
+             font-weight:800;text-align:center">生气可以，失控不行，动手最严重</div>
+      </div>
+      <div class="card">
+        <h2>惊喜星</h2>
+        <div class="row">
+          <button class="btn sm" onclick="bonus(-1)">−</button>
+          <div style="font-size:26px;font-weight:900;min-width:44px;text-align:center">${day.bonus||0}</div>
+          <button class="btn sm primary" onclick="bonus(1)">＋</button>
+          <span class="muted">清单外的好表现，每周 1~2 次</span>
+        </div>
+      </div>
+      ${nextGoalCard()}
+    </div>
+  </div>`;
+}
+function nextGoalCard(){
+  const ms = milestoneState().filter(m=>m.need>0).sort((a,b)=>a.need-b.need)[0];
+  if(!ms) return '';
+  return `<div class="card"><h2>下一个目标</h2>
+    <div style="font-size:22px;font-weight:900;text-align:center;padding:8px 0">
+      ${ms.icon} 还差 ${ms.need} 个太阳<br><span style="font-size:15px;color:#6b7c86">就能换${esc(ms.label)}</span>
+    </div></div>`;
+}
+function shiftDay(n){
+  const d = parseDate(ST.sel); d.setDate(d.getDate()+n);
+  const s = fmtDate(d); if(s > todayStr()) return;
+  ST.sel = s; render();
+}
+function jumpToday(){ ST.sel = todayStr(); render(); }
+function toggleSlot(id){
+  if(ST.sel > todayStr()) return;
+  const day = getDay(ST.sel);
+  const before = milestoneState().map(m=>m.earned);
+  day.slots[id] = !day.slots[id];
+  day.settled = true;
+  save(); render();
+  checkUnlock(before);
+}
+function tog(f){
+  const day = getDay(ST.sel);
+  const before = milestoneState().map(m=>m.earned);
+  day[f] = !day[f];
+  // 小脾气 = 「管好脾气」拿不到，勾上时自动同步那一格
+  if(f==='tantrum' && day[f]) day.slots['temper'] = false;
+  save(); render();
+  checkUnlock(before);
+}
+function bonus(n){
+  const day = getDay(ST.sel);
+  day.bonus = Math.max(0,(day.bonus||0)+n);
+  save(); render();
+}
+function checkUnlock(before){
+  const after = milestoneState();
+  after.forEach((m,i)=>{
+    if(m.earned > before[i]) celebrate(m.icon, '解锁了'+m.label+'！', '攒够 '+m.threshold+' 个太阳');
+  });
+}
+
+/* ── 日历 ── */
+function vCal(){
+  const {y,m} = ST.cal;
+  const first = new Date(y,m,1), days = new Date(y,m+1,0).getDate();
+  const pad = (first.getDay()+6)%7;   // 周一开头
+  const td = todayStr();
+  let cells='', sun=0, star=0, n=0;
+
+  for(let i=0;i<pad;i++) cells += '<div class="cell pad"></div>';
+  for(let d=1; d<=days; d++){
+    const ds = fmtDate(new Date(y,m,d));
+    const rec = DB.days[ds];
+    const fut = ds > td;
+    let mark='<span class="d">'+d+'</span>';
+    if(rec){
+      const r = settleDay(rec);
+      star += r.stars; n++;
+      if(r.sun){ sun++; mark = '<span class="d">'+d+'</span><span class="m">☀️</span>'; }
+      else if(rec.hit) mark = '<span class="d">'+d+'</span><span class="m">💧</span>';
+      else if(r.stars) mark = '<span class="d">'+d+'</span><span class="s">'+r.stars+'⭐</span>';
+    }
+    cells += `<div class="cell ${ds===td?'today':''} ${fut?'fut':''}"
+      ${fut?'':`onclick="pick('${ds}')"`}>${mark}</div>`;
+  }
+
+  el('main').innerHTML = `
+  <div class="card">
+    <h2>
+      <button class="btn sm ghost" onclick="mv(-1)">◀</button>
+      <span style="flex:1;text-align:center">${y} 年 ${m+1} 月</span>
+      <button class="btn sm ghost" onclick="mv(1)">▶</button>
+    </h2>
+    <div class="cal">
+      ${'一二三四五六日'.split('').map(x=>`<div class="dow">${x}</div>`).join('')}
+      ${cells}
+    </div>
+    <div class="row" style="margin-top:18px;justify-content:center">
+      <div class="chip" style="font-size:15px">本月 ☀️ ${sun}</div>
+      <div class="chip" style="font-size:15px">日均 ⭐ ${n?(star/n).toFixed(1):'0.0'}</div>
+      <span class="muted">点任意日期可以补录或修改</span>
+    </div>
+  </div>`;
+}
+function mv(n){
+  let {y,m} = ST.cal; m+=n;
+  if(m<0){m=11;y--} if(m>11){m=0;y++}
+  ST.cal={y,m}; render();
+}
+function pick(ds){ ST.sel=ds; go('today'); }
+
+/* ── 收集册 ── */
+function vAlbum(){
+  const {suns} = totals();
+  const round  = suns===0 ? 0 : Math.floor((suns-1)/60);
+  const inRnd  = suns - round*60;                 // 1..60
+  const ms     = DB.config.milestones;
+  const next   = milestoneState().filter(m=>m.need>0).sort((a,b)=>a.need-b.need)[0];
+
+  let cells='';
+  for(let i=1;i<=60;i++){
+    const prizes = ms.filter(m=>i % m.threshold === 0);
+    const full = i <= inRnd;
+    cells += `<div class="acell ${full?'full':''} ${prizes.length?'prize':''}">
+      ${prizes.length ? prizes.map(p=>p.icon).join('') : (full?'☀️':'')}
+      <span class="n">${i}</span></div>`;
+  }
+
+  el('main').innerHTML = `
+  <div class="goal">${ next ? `还差 ${next.need} 个太阳就有${esc(next.label)}！${next.icon}` : '全部解锁啦！🎉' }</div>
+  <div class="card">
+    <h2>太阳收集册 ${round>0?`<span class="muted">· 第 ${round+1} 轮</span>`:''}
+      <span class="muted" style="margin-left:auto">已有 ${suns} 个太阳</span></h2>
+    <div class="album" style="margin-bottom:12px">${cells}</div>
+    <hr>
+    <div class="row">
+      ${ms.map(m=>`<div class="chip" style="font-size:14px">${m.icon} 每 ${m.threshold} 个 → ${esc(m.label)}</div>`).join('')}
+    </div>
+  </div>`;
+}
+
+/* ── 商店 ── */
+function findItem(id){
+  return DB.config.starRewards.find(x=>x.id===id)
+      || DB.config.sunRewards.find(x=>x.id===id);
+}
+function itemCard(it, kind, have){
+  const unit = kind==='sun' ? '☀️' : '⭐';
+  const used = it.weeklyLimit ? weekSpent(it.id) : 0;
+  const limited = it.weeklyLimit && used >= it.weeklyLimit;
+  const ok = have >= it.cost && !limited;
+  return `<div class="item ${ok?'':'off'}">
+    <div class="t">${it.icon} ${esc(it.label)}</div>
+    <div class="c">${it.cost} ${unit}</div>
+    ${it.weeklyLimit?`<div class="muted">本周还能换 ${Math.max(0,it.weeklyLimit-used)} 次</div>`:'<div class="muted">不限次数</div>'}
+    <button class="btn primary" ${ok?'':'disabled'} onclick="redeem('${it.id}','${kind}')">换</button>
+  </div>`;
+}
+function vShop(){
+  const {stars, suns} = totals();
+  const ms = milestoneState();
+  const pend = ms.filter(m=>m.pending>0);
+
+  const hist = DB.ledger.slice(-8).reverse().map(e=>{
+    const it = findItem(e.itemId);
+    const amt = e.suns!=null&&e.suns<0 ? e.suns+' ☀️' : (e.stars||0)+' ⭐';
+    return `<tr><td class="muted">${e.date}</td><td>${it?it.icon+' '+esc(it.label):e.type}</td>
+      <td style="text-align:right;font-weight:800">${amt}</td></tr>`;
+  }).join('');
+
+  el('main').innerHTML = `
+  ${pend.length?`<div class="card"><h2>已解锁，等着兑现 🎁</h2>
+    ${pend.map(m=>`<div class="pending">
+      <span style="font-size:30px">${m.icon}</span>
+      <span style="font-size:18px;font-weight:800">${esc(m.label)} × ${m.pending}</span>
+      <button class="btn sm primary" style="margin-left:auto" onclick="fulfill('${m.id}')">已经给她了</button>
+    </div>`).join('')}
+    <div class="muted">解锁 ≠ 已经买了。真的给了她之后再点这个按钮。</div></div>`:''}
+
+  <div class="card">
+    <h2>太阳换零食 <span class="chip" style="margin-left:auto;font-size:16px">☀️ ${suns}</span></h2>
+    <div class="shop">${DB.config.sunRewards.map(it=>itemCard(it,'sun',suns)).join('')}</div>
+    <div class="muted" style="margin-top:14px">
+      ⚠️ 太阳花掉就少一个，收集册也会退一格 —— 吃零食会让玩具、游乐场、旅游都变慢。
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>星星换小东西 <span class="chip" style="margin-left:auto;font-size:16px">⭐ ${stars}</span></h2>
+    <div class="shop">${DB.config.starRewards.map(it=>itemCard(it,'star',stars)).join('')}</div>
+  </div>
+
+  <div class="card">
+    <h2>太阳换大东西</h2>
+    <div class="shop">
+      ${ms.map(m=>`<div class="item">
+        <div class="t">${m.icon} ${esc(m.label)}</div>
+        <div class="c">每 ${m.threshold} ☀️</div>
+        <div class="muted">${m.need>0?`还差 ${m.need} 个`:'可以换啦'} · 已解锁 ${m.earned} 次</div>
+      </div>`).join('')}
+    </div>
+  </div>
+
+  ${hist?`<div class="card"><h2>最近兑换</h2><table class="rules">${hist}</table></div>`:''}`;
+}
+function redeem(id, kind){
+  const it = findItem(id); if(!it) return;
+  const t = totals();
+  const have = kind==='sun' ? t.suns : t.stars;
+  const unit = kind==='sun' ? '个太阳' : '颗星星';
+  if(have < it.cost) return;
+  if(it.weeklyLimit && weekSpent(id) >= it.weeklyLimit){ toast('本周已经换完啦'); return; }
+  if(!confirm(`用 ${it.cost} ${unit}换「${it.label}」？`)) return;
+  const e = {date:todayStr(), type:'redeem', itemId:id};
+  if(kind==='sun') e.suns = -it.cost; else e.stars = -it.cost;
+  if(id==='sunbuy') e.suns = 1;                 // 补太阳：花星星，换回一个太阳
+  DB.ledger.push(e); save(); render();
+  toast('换好啦！' + it.icon);
+}
+function fulfill(id){
+  DB.fulfilled[id] = (DB.fulfilled[id]||0) + 1;
+  save(); render(); toast('已记录 ✓');
+}
+
+/* ── 设置 ── */
+function vSet(){
+  const c = DB.config;
+  el('main').innerHTML = `
+  <div class="card">
+    <h2>孩子</h2>
+    <div class="field"><label>名字</label>
+      <input type="text" class="lbl" value="${esc(DB.child.name)}" onchange="setName(this.value)"></div>
+  </div>
+
+  <div class="card">
+    <h2>每天的 ${c.slots.length} 件事</h2>
+    ${c.slots.map((s,i)=>`<div class="field">
+      <input type="text" class="ic" value="${esc(s.icon)}" onchange="setSlot(${i},'icon',this.value)">
+      <input type="text" class="lbl" value="${esc(s.label)}" onchange="setSlot(${i},'label',this.value)">
+    </div>`).join('')}
+    <hr>
+    <div class="field"><label>太阳门槛</label>
+      <input type="number" class="num" min="1" max="${c.slots.length}" value="${c.sunThreshold}"
+        onchange="setCfg('sunThreshold',+this.value)">
+      <span class="muted">拿到几颗星星才算好日子（当前 ${c.sunThreshold}/${c.slots.length}，最多错一件）</span></div>
+  </div>
+
+  <div class="card">
+    <h2>基线期</h2>
+    <div class="field"><label>扣分规则生效</label>
+      <button class="btn sm ${c.penaltyEnabled?'primary':'ghost'}"
+        onclick="setCfg('penaltyEnabled',${!c.penaltyEnabled})">
+        ${c.penaltyEnabled?'✓ 已生效':'✗ 只记录不生效'}</button></div>
+    <div class="field"><label>基线期结束日</label>
+      <input type="date" value="${c.baselineEndDate}" onchange="setCfg('baselineEndDate',this.value)"></div>
+    <div class="muted">前两周只记录不扣分：让她先尝到「攒星星真能换到东西」，信任要在惩罚之前建立。</div>
+  </div>
+
+  <div class="card">
+    <h2>太阳换的东西</h2>
+    ${c.sunRewards.map((r,i)=>`<div class="field">
+      <input type="text" class="ic"  value="${esc(r.icon)}"  onchange="setSw(${i},'icon',this.value)">
+      <input type="text" class="lbl" value="${esc(r.label)}" onchange="setSw(${i},'label',this.value)">
+      <input type="number" class="num" min="1" value="${r.cost}" onchange="setSw(${i},'cost',+this.value)">
+      <span class="muted">☀️ · 每周上限</span>
+      <input type="number" class="num" min="0" value="${r.weeklyLimit}" onchange="setSw(${i},'weeklyLimit',+this.value)">
+      <span class="muted">（0 = 不限）</span>
+    </div>`).join('')}
+    <div class="muted">花太阳买东西会同时减慢里程碑进度。每周吃 2 次零食的话，
+      10/20/60 大约要 47 / 93 / 280 天 —— 想贴回 2 周 / 1 月 / 1 季度，把下面的里程碑改成 5 / 10 / 30。</div>
+  </div>
+
+  <div class="card">
+    <h2>星星换的东西</h2>
+    ${c.starRewards.map((r,i)=>`<div class="field">
+      <input type="text" class="ic"  value="${esc(r.icon)}"  onchange="setRw(${i},'icon',this.value)">
+      <input type="text" class="lbl" value="${esc(r.label)}" onchange="setRw(${i},'label',this.value)">
+      <input type="number" class="num" min="1" value="${r.cost}" onchange="setRw(${i},'cost',+this.value)">
+      <span class="muted">⭐ · 每周上限</span>
+      <input type="number" class="num" min="0" value="${r.weeklyLimit}" onchange="setRw(${i},'weeklyLimit',+this.value)">
+      <span class="muted">（0 = 不限）</span>
+    </div>`).join('')}
+  </div>
+
+  <div class="card">
+    <h2>太阳里程碑</h2>
+    ${c.milestones.map((m,i)=>`<div class="field">
+      <input type="text" class="ic"  value="${esc(m.icon)}"  onchange="setMs(${i},'icon',this.value)">
+      <input type="text" class="lbl" value="${esc(m.label)}" onchange="setMs(${i},'label',this.value)">
+      <span class="muted">每</span>
+      <input type="number" class="num" min="1" value="${m.threshold}" onchange="setMs(${i},'threshold',+this.value)">
+      <span class="muted">个太阳解锁一次 · 已兑现 ${DB.fulfilled[m.id]||0} 次</span>
+    </div>`).join('')}
+    <div class="muted">两周基线期结束后，如果好日子率明显偏低，可以把 10/20/60 降到 8/16/48。</div>
+  </div>
+
+  <div class="card">
+    <h2>背景图</h2>
+    <div class="field"><label>选一张图</label>
+      <input type="file" accept="image/*" onchange="loadBg(this)"></div>
+    <div class="field"><label>白色遮罩浓度</label>
+      <input type="range" min="0" max="80" value="${Math.round((DB.ui.veil||0)*100)}"
+        oninput="setVeil(this.value)" style="width:220px">
+      <span class="muted" id="veilTxt">${Math.round((DB.ui.veil||0)*100)}%</span></div>
+    ${DB.ui.bg?'<button class="btn sm ghost" onclick="clearBg()">去掉背景图</button>':''}
+    <div class="muted" style="margin-top:10px">图片会自动压缩后存在这台电脑上，不会上传到任何地方。遮罩用来保证文字看得清。</div>
+  </div>
+
+  <div class="card">
+    <h2>数据存在哪</h2>
+    <table class="rules" style="margin-bottom:16px">
+      <tr><td>数据文件</td><td style="text-align:right;font-weight:800">
+        ${FS.handle ? '✅ '+esc(FS.name) : '❌ 没绑定'}</td></tr>
+      <tr><td>浏览器存储</td><td style="text-align:right;font-weight:800">
+        ${Local.ok ? '✅ 可用（镜像）' : '❌ 被禁用'}</td></tr>
+      <tr><td>上次保存</td><td style="text-align:right;font-weight:800">
+        ${DB.meta?.savedAt ? new Date(DB.meta.savedAt).toLocaleString('zh-CN') : '—'}</td></tr>
+      <tr><td>已记录</td><td style="text-align:right;font-weight:800">${Object.keys(DB.days).length} 天</td></tr>
+    </table>
+    <div class="row">
+      <button class="btn primary" onclick="FS.bind()" ${FS.supported?'':'disabled'}>
+        ${FS.handle?'换一个数据文件':'💾 存到文件（推荐）'}</button>
+      <button class="btn ghost" onclick="FS.open()" ${FS.supported?'':'disabled'}>📂 打开已有文件</button>
+    </div>
+    <div class="muted" style="margin-top:12px">
+      ${FS.supported
+        ? '绑定后每次改动都会直接写进那个 .json 文件，<b>浏览器怎么清理都不会丢</b>。放到网盘同步目录里更保险。'
+        : '这个浏览器不支持直接写文件（需要 Chrome 或 Edge），只能用下面的导出/导入。'}
+    </div>
+    <hr>
+    <div class="row">
+      <button class="btn ghost" onclick="exportJSON()">⬇ 导出备份</button>
+      <button class="btn ghost" onclick="el('impFile').click()">⬆ 导入备份</button>
+      <input type="file" id="impFile" accept=".json" class="hidden" onchange="importJSON(this)">
+      <button class="btn danger" onclick="wipe()">清空全部</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>复盘要看的三个数</h2>
+    ${statsBlock()}
+  </div>`;
+}
+function statsBlock(){
+  const ds = Object.keys(DB.days).sort();
+  if(!ds.length) return '<div class="muted">还没有数据</div>';
+  const n = ds.length;
+  let melt=0, tan=0, hit=0, sun=0, star=0;
+  const slotHit = {}; DB.config.slots.forEach(s=>slotHit[s.id]=0);
+  ds.forEach(d=>{
+    const day = DB.days[d], r = settleDay(day);
+    if(day.meltdown) melt++; if(day.tantrum) tan++; if(day.hit) hit++;
+    if(r.sun) sun++; star += r.stars;
+    DB.config.slots.forEach(s=>{ if(day.slots[s.id]) slotHit[s.id]++; });
+  });
+  const wk = (n/7)||1;
+  return `<table class="rules">
+    <tr><td>情绪失控频率</td><td style="text-align:right;font-weight:800">${(melt/wk).toFixed(1)} 次/周</td></tr>
+    <tr><td>小脾气频率</td><td style="text-align:right;font-weight:800">${(tan/wk).toFixed(1)} 次/周</td></tr>
+    <tr><td>打人频率</td><td style="text-align:right;font-weight:800">${(hit/wk).toFixed(1)} 次/周</td></tr>
+    <tr><td>好日子率</td><td style="text-align:right;font-weight:800">${Math.round(sun/n*100)}%</td></tr>
+    <tr><td>日均星数</td><td style="text-align:right;font-weight:800">${(star/n).toFixed(1)}</td></tr>
+    </table><hr><table class="rules">
+    ${DB.config.slots.map(s=>`<tr><td>${s.icon} ${esc(s.label)}</td>
+      <td style="text-align:right;font-weight:800">${Math.round(slotHit[s.id]/n*100)}%</td></tr>`).join('')}
+    </table>
+    <div class="muted" style="margin-top:10px">
+      某一格连续 21 天满勾 → 该毕业了，换成新目标。
+    </div>`;
+}
+
+/* ── 设置操作 ── */
+function setName(v){ DB.child.name = v.trim()||'宝贝'; save(); render(); }
+function setCfg(k,v){ DB.config[k]=v; save(); render(); }
+function setSlot(i,k,v){ DB.config.slots[i][k]=v; save(); render(); }
+function setRw(i,k,v){ DB.config.starRewards[i][k]=v; save(); render(); }
+function setSw(i,k,v){ DB.config.sunRewards[i][k]=v; save(); render(); }
+function setMs(i,k,v){ DB.config.milestones[i][k]=v; save(); render(); }
+
+/* ── 背景图（压缩后存本地） ── */
+function loadBg(input){
+  const f = input.files[0]; if(!f) return;
+  const rd = new FileReader();
+  rd.onload = e=>{
+    const img = new Image();
+    img.onload = ()=>{
+      const max = 1920, sc = Math.min(1, max/img.width);
+      const cv = document.createElement('canvas');
+      cv.width = img.width*sc; cv.height = img.height*sc;
+      cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height);
+      DB.ui.bg = cv.toDataURL('image/jpeg', 0.82);
+      if(!DB.ui.veil) DB.ui.veil = 0.35;
+      save(); render(); toast('背景换好啦 🖼');
+    };
+    img.onerror = ()=>toast('这张图读不了，换一张试试');
+    img.src = e.target.result;
+  };
+  rd.readAsDataURL(f);
+}
+function clearBg(){ DB.ui.bg=null; save(); render(); }
+function setVeil(v){
+  DB.ui.veil = v/100; el('veilTxt').textContent = v+'%';
+  el('bgVeil').style.opacity = DB.ui.veil; save();
+}
+function applyBg(){
+  el('bgLayer').style.backgroundImage = DB.ui.bg ? `url(${DB.ui.bg})` : '';
+  el('bgVeil').style.opacity = DB.ui.bg ? (DB.ui.veil||0) : 0;
+  el('bgPattern').style.opacity = DB.ui.bg ? 0.25 : 1;
+}
+
+/* ── 数据导入导出 ── */
+function exportJSON(){
+  const blob = new Blob([JSON.stringify(DB,null,2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${DB.child.name}的星星-备份-${todayStr()}.json`;
+  a.click(); URL.revokeObjectURL(a.href);
+  toast('备份已下载 ⬇');
+}
+function importJSON(input){
+  const f = input.files[0]; if(!f) return;
+  const rd = new FileReader();
+  rd.onload = e=>{
+    try{
+      const d = JSON.parse(e.target.result);
+      if(!d.days || !d.config) throw new Error('格式不对');
+      if(!confirm('导入会覆盖现在的全部数据，确定？')) return;
+      DB = normalize(d);
+      save(); render(); toast('导入成功 ✓');
+    }catch(err){ alert('这个文件读不了：'+err.message); }
+  };
+  rd.readAsText(f); input.value='';
+}
+function wipe(){
+  if(!confirm('清空全部数据？这个撤不回来。')) return;
+  if(!confirm('真的确定？建议先导出备份。')) return;
+  DB = defaults(); save(); render(); toast('已清空');
+}
+
+/* ── 提示 / 庆祝 ── */
+let tmr;
+function toast(msg){
+  const t = el('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(tmr); tmr = setTimeout(()=>t.classList.remove('show'), 2200);
+}
+function celebrate(icon, t1, t2){
+  el('cE').textContent = icon; el('cT1').textContent = t1;
+  el('cT2').textContent = t2 + ' · 点一下继续';
+  el('celeb').classList.add('show');
+}
+
+/* ── 启动 ── */
+(async function init(){
+  render();                     // 先用 localStorage 的镜像把页面点亮
+  await FS.restore();           // 再连磁盘文件，两边取新的那份
+
+  // 关页面前把最后一次改动落盘
+  window.addEventListener('beforeunload', ()=>{ Local.save(DB); });
+
+  // 基线期到期提醒
+  if(!DB.config.penaltyEnabled && todayStr() > DB.config.baselineEndDate
+     && Object.keys(DB.days).length > 0){
+    setTimeout(()=>{
+      if(confirm('基线期结束了。\n\n现在去设置里看看这两周的数据，然后开启扣分规则？'))
+        go('set');
+    }, 600);
+  }
+})();
+</script>
+</body>
+</html>
