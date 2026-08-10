@@ -79,12 +79,16 @@ nav button.on{background:var(--yellow)}
 .btn.ghost{background:var(--gray-l);font-weight:700}
 
 /* ── 今日格子 ── */
-.slots{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+/* auto-rows:1fr —— 文案长短不一时，某行换成两行会让那一排变高，
+   不加的话三排高度就不齐了 */
+.slots{display:grid;grid-template-columns:repeat(3,1fr);grid-auto-rows:1fr;gap:14px}
 @media(max-width:560px){.slots{grid-template-columns:repeat(2,1fr)}}
 .slot{
   position:relative;cursor:pointer;user-select:none;
   background:var(--gray-l);border:3px solid var(--gray);border-radius:18px;
   padding:20px 8px 16px;text-align:center;transition:.14s;
+  /* 顶对齐而不是居中：文案一行/两行混排时，居中会让同一排的图标高低不一 */
+  display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
 }
 /* 未完成时不能太淡 —— 6 岁孩子要能认出图标是什么 */
 .slot .ic{font-size:40px;line-height:1;filter:grayscale(.6);opacity:.62;transition:.14s}
@@ -307,37 +311,37 @@ const VIEWS = [
 ];
 const KEY = 'jinxi-stars-v1';
 
+/* ── 规则：只活在代码里，不进数据 ──
+   放进数据的话，同步回来的旧配置会盖掉新代码，改文案永远不生效。 */
+const CHILD = '徐瑾熙';
+const CONFIG = {
+  slots:[
+    {id:'teeth', label:'早晚刷牙',         icon:'🪥'},
+    {id:'sleep', label:'在自己的床按时睡觉', icon:'🛏️'},
+    {id:'study', label:'认真学习30分钟',    icon:'📖'},
+    {id:'chore', label:'帮忙干活',          icon:'🧹'},
+    {id:'temper',label:'能够管理好情绪',    icon:'😊'},
+    {id:'meal',  label:'自己好好吃饭',      icon:'🍚'}
+  ],
+  sunThreshold:5,
+  starRewards:[
+    {id:'screen', label:'玩 20 分钟电子设备', icon:'📱', cost:1,  weeklyLimit:0},
+    {id:'sunbuy', label:'补一个太阳',         icon:'☀️', cost:20, weeklyLimit:1}
+  ],
+  sunRewards:[
+    {id:'snack',  label:'零食',               icon:'🍭', cost:1,  weeklyLimit:2}
+  ],
+  milestones:[
+    {id:'toy',  label:'玩具',   icon:'🧸', threshold:10},
+    {id:'park', label:'游乐场', icon:'🎡', threshold:20},
+    {id:'trip', label:'旅游',   icon:'✈️', threshold:60}
+  ]
+};
+const slotById = id => CONFIG.slots.find(s=>s.id===id) || {label:id, icon:''};
+
+/* ── 数据：只有真正需要持久化的四样 ── */
 function defaults(){
-  return {
-    child:{ name:'徐瑾熙' },
-    config:{
-      slots:[
-        {id:'teeth', label:'刷牙',        icon:'🪥'},
-        {id:'sleep', label:'按时睡觉',    icon:'🛏️'},
-        {id:'study', label:'认真学习',    icon:'📖'},
-        {id:'chore', label:'帮忙干活',    icon:'🧹'},
-        {id:'temper',label:'管好脾气',    icon:'😊'},
-        {id:'meal',  label:'自己好好吃饭',icon:'🍚'}
-      ],
-      sunThreshold:5,
-      starRewards:[
-        {id:'screen', label:'玩 20 分钟电子设备', icon:'📱', cost:1,  weeklyLimit:0},
-        {id:'sunbuy', label:'补一个太阳',         icon:'☀️', cost:20, weeklyLimit:1}
-      ],
-      sunRewards:[
-        {id:'snack',  label:'零食',               icon:'🍭', cost:1,  weeklyLimit:2}
-      ],
-      milestones:[
-        {id:'toy',  label:'玩具',   icon:'🧸', threshold:10},
-        {id:'park', label:'游乐场', icon:'🎡', threshold:20},
-        {id:'trip', label:'旅游',   icon:'✈️', threshold:60}
-      ]
-    },
-    days:{},
-    ledger:[],
-    fulfilled:{toy:0, park:0, trip:0},
-    meta:{ savedAt:null }
-  };
+  return { days:{}, ledger:[], fulfilled:{toy:0, park:0, trip:0}, meta:{ savedAt:null } };
 }
 
 /* ═══════════════ 日期工具 ═══════════════ */
@@ -360,23 +364,37 @@ function cnDate(s){
    浏览器清理数据 / 退出时清 Cookie / 换浏览器，数据就没了。
    所以：真正的数据存在磁盘上一个 .json 文件里，localStorage 只做镜像和快速启动。
    ═══════════════════════════════════ */
+/* 白名单构造：只取认识的键。
+   用 Object.assign(base, d) 的话，数据里任何历史遗留字段都会被原样透传，
+   删了代码也挡不住 —— config / ui / version 就是这么一直活着的。 */
 function normalize(d){
-  const base = defaults();
-  // 迁移：零食从「星星换」移到「太阳换」，避免两张表出现同名项
-  if(d.config && Array.isArray(d.config.starRewards)){
-    const kept = d.config.starRewards.filter(r=>r.id!=='snack');
-    d.config.starRewards = kept.length ? kept : base.config.starRewards;
+  d = d || {};
+  const out = defaults();
+
+  if(d.days && typeof d.days === 'object'){
+    for(const [date, rec] of Object.entries(d.days)){
+      if(!rec || typeof rec !== 'object') continue;
+      const day = blankDay();
+      if(rec.slots) CONFIG.slots.forEach(s=>{ day.slots[s.id] = !!rec.slots[s.id]; });
+      day.tantrum  = !!rec.tantrum;
+      day.meltdown = !!rec.meltdown;
+      day.hit      = !!rec.hit;
+      day.bonusSun = !!rec.bonusSun;
+      day.bonus    = Math.max(0, Number(rec.bonus) || 0);
+      if(rec.at) day.at = rec.at;
+      out.days[date] = day;
+    }
   }
-  // 补齐同步需要的标识：流水的 id 必须在各设备上一致，所以用内容拼出来而不是随机生成
-  if(Array.isArray(d.ledger)) d.ledger.forEach((e,i)=>{
-    if(!e.id) e.id = `lg-${i}-${e.date||''}-${e.itemId||e.type||''}`;
-    if(!e.at) e.at = (e.date||'1970-01-01') + 'T12:00:00.000Z';
-  });
-  return Object.assign(base, d, {
-    config:    Object.assign(base.config,    d.config||{}),
-    fulfilled: Object.assign(base.fulfilled, d.fulfilled||{}),
-    meta:      Object.assign(base.meta,      d.meta||{})
-  });
+  if(Array.isArray(d.ledger)) out.ledger = d.ledger.map((e,i)=>({
+    // 流水 id 必须在各设备上一致，所以用内容拼出来而不是随机生成
+    id:     e.id || `lg-${i}-${e.date||''}-${e.itemId||e.type||''}`,
+    at:     e.at || (e.date||'1970-01-01') + 'T12:00:00.000Z',
+    date:   e.date, type: e.type, itemId: e.itemId,
+    stars:  e.stars || 0, suns: e.suns || 0
+  }));
+  CONFIG.milestones.forEach(m=>{ out.fulfilled[m.id] = Math.max(0, Number(d.fulfilled?.[m.id]) || 0); });
+  if(d.meta?.savedAt) out.meta.savedAt = d.meta.savedAt;
+  return out;
 }
 const Local = {
   ok: (()=>{ try{ localStorage.setItem('__t','1'); localStorage.removeItem('__t'); return true; }
@@ -485,7 +503,7 @@ const GIT = {
   },
   async write(){
     const body = {
-      message: '星星 · ' + DB.child.name + ' · ' + new Date().toLocaleString('zh-CN',{hour12:false}),
+      message: '星星 · ' + CHILD + ' · ' + new Date().toLocaleString('zh-CN',{hour12:false}),
       content: b64enc(JSON.stringify(DB, null, 2)),
       branch: this.branch()
     };
@@ -568,7 +586,7 @@ function save(){
    365 条记录重算不到 1ms。
    ═════════════════════════════════════ */
 function blankDay(){
-  const s={}; DB.config.slots.forEach(x=>s[x.id]=false);
+  const s={}; CONFIG.slots.forEach(x=>s[x.id]=false);
   return {slots:s, tantrum:false, meltdown:false, hit:false, bonus:0, bonusSun:false};
 }
 /* 只读：看一眼不落库。
@@ -576,7 +594,7 @@ function blankDay(){
    都是拿 days 的条数当分母 —— 两周后校准里程碑靠的就是这几个数。 */
 function getDay(date){
   const d = DB.days[date] || blankDay();
-  DB.config.slots.forEach(x=>{ if(!(x.id in d.slots)) d.slots[x.id]=false; });
+  CONFIG.slots.forEach(x=>{ if(!(x.id in d.slots)) d.slots[x.id]=false; });
   return d;
 }
 /* 要改的时候才真的落库 */
@@ -585,9 +603,9 @@ function editDay(date){
   return DB.days[date];
 }
 function settleDay(day){
-  let stars = DB.config.slots.reduce((n,x)=>n+(day.slots[x.id]?1:0),0) + (day.bonus||0);
+  let stars = CONFIG.slots.reduce((n,x)=>n+(day.slots[x.id]?1:0),0) + (day.bonus||0);
   if(day.hit) stars = 0;                          // 打人 → 当天清零（情绪失控保留星星）
-  let sun = stars >= DB.config.sunThreshold;
+  let sun = stars >= CONFIG.sunThreshold;
   if(day.meltdown || day.hit) sun = false;        // 失控 / 打人 → 当天无太阳
   const sunPenalty = day.hit ? 1 : 0;             // 打人额外扣 1 个已有太阳
   const bonusSun  = day.bonusSun ? 1 : 0;         // 惊喜太阳：独立于当天有没有挣到
@@ -610,7 +628,7 @@ function totals(){
 }
 function milestoneState(){
   const {suns} = totals();
-  return DB.config.milestones.map(m=>{
+  return CONFIG.milestones.map(m=>{
     const earned = Math.floor(suns / m.threshold);
     const done   = DB.fulfilled[m.id] || 0;
     const next   = (earned+1) * m.threshold;
@@ -627,8 +645,8 @@ function render(){
   const t = totals();
   el('tStars').textContent = t.stars;
   el('tSuns').textContent  = t.suns;
-  el('brandName').textContent = DB.child.name + '的星星';
-  document.title = DB.child.name + '的星星';
+  el('brandName').textContent = CHILD + '的星星';
+  document.title = CHILD + '的星星';
 
   el('nav').innerHTML = VIEWS.map(v=>
     `<button class="${ST.view===v.id?'on':''}" onclick="go('${v.id}')">${v.name}</button>`).join('');
@@ -689,7 +707,7 @@ function vToday(){
         </h2>
 
         <div class="slots">
-          ${DB.config.slots.map(s=>`
+          ${CONFIG.slots.map(s=>`
             <div class="slot ${day.slots[s.id]?'on':''} ${future?'dis':''}" onclick="toggleSlot('${s.id}')">
               <div class="tick">⭐</div>
               <div class="ic">${s.icon}</div>
@@ -715,7 +733,7 @@ function vToday(){
       <div class="card">
         <h2>规则</h2>
         <table class="rules">
-          <tr><td>😤 小脾气</td><td class="muted">「管好脾气」那颗星拿不到</td></tr>
+          <tr><td>😤 小脾气</td><td class="muted">「${esc(slotById('temper').label)}」那颗星拿不到</td></tr>
           <tr><td>😭 情绪失控</td><td class="muted">当天没有太阳，星星保留</td></tr>
           <tr><td>✋ 打人</td><td class="muted">当天星星清零，再扣 1 个太阳</td></tr>
         </table>
@@ -753,7 +771,7 @@ function sunNote(day, r){
   if(r.sun) return '☀️ 拿到太阳了！';
   if(day.hit) return '✋ 打人了，今天没有太阳';
   if(day.meltdown) return '😭 情绪失控，今天没有太阳';
-  return `还差 ${DB.config.sunThreshold - r.stars} 颗就有太阳`;
+  return `还差 ${CONFIG.sunThreshold - r.stars} 颗就有太阳`;
 }
 function nextGoalCard(){
   const ms = milestoneState().filter(m=>m.need>0).sort((a,b)=>a.need-b.need)[0];
@@ -782,7 +800,7 @@ function tog(f){
   const day = editDay(ST.sel);
   const before = milestoneState().map(m=>m.earned);
   day[f] = !day[f];
-  // 小脾气 = 「管好脾气」拿不到，勾上时自动同步那一格
+  // 小脾气 = 情绪那一格拿不到，勾上时自动同步
   if(f==='tantrum' && day[f]) day.slots['temper'] = false;
   day.at = stamp();
   save(); render();
@@ -878,7 +896,7 @@ function vAlbum(){
   const {suns} = totals();
   const round  = suns===0 ? 0 : Math.floor((suns-1)/60);
   const inRnd  = suns - round*60;                 // 1..60
-  const ms     = DB.config.milestones;
+  const ms     = CONFIG.milestones;
   const next   = milestoneState().filter(m=>m.need>0).sort((a,b)=>a.need-b.need)[0];
 
   let cells='';
@@ -906,8 +924,8 @@ function vAlbum(){
 
 /* ── 商店 ── */
 function findItem(id){
-  return DB.config.starRewards.find(x=>x.id===id)
-      || DB.config.sunRewards.find(x=>x.id===id);
+  return CONFIG.starRewards.find(x=>x.id===id)
+      || CONFIG.sunRewards.find(x=>x.id===id);
 }
 function itemCard(it, kind, have){
   const unit = kind==='sun' ? '☀️' : '⭐';
@@ -944,7 +962,7 @@ function vShop(){
 
   <div class="card">
     <h2>太阳换零食 <span class="chip" style="margin-left:auto;font-size:16px">☀️ ${suns}</span></h2>
-    <div class="shop">${DB.config.sunRewards.map(it=>itemCard(it,'sun',suns)).join('')}</div>
+    <div class="shop">${CONFIG.sunRewards.map(it=>itemCard(it,'sun',suns)).join('')}</div>
     <div class="note">
       ⚠️ 太阳花掉就少一个，收集册也会退一格 —— 吃零食会让玩具、游乐场、旅游都变慢。
     </div>
@@ -952,7 +970,7 @@ function vShop(){
 
   <div class="card">
     <h2>星星换小东西 <span class="chip" style="margin-left:auto;font-size:16px">⭐ ${stars}</span></h2>
-    <div class="shop">${DB.config.starRewards.map(it=>itemCard(it,'star',stars)).join('')}</div>
+    <div class="shop">${CONFIG.starRewards.map(it=>itemCard(it,'star',stars)).join('')}</div>
   </div>
 
   <div class="card">
@@ -1029,12 +1047,12 @@ function statsBlock(){
   if(!ds.length) return '<div class="muted">还没有数据</div>';
   const n = ds.length;
   let melt=0, tan=0, hit=0, sun=0, star=0;
-  const slotHit = {}; DB.config.slots.forEach(s=>slotHit[s.id]=0);
+  const slotHit = {}; CONFIG.slots.forEach(s=>slotHit[s.id]=0);
   ds.forEach(d=>{
     const day = DB.days[d], r = settleDay(day);
     if(day.meltdown) melt++; if(day.tantrum) tan++; if(day.hit) hit++;
     if(r.sun) sun++; star += r.stars;
-    DB.config.slots.forEach(s=>{ if(day.slots[s.id]) slotHit[s.id]++; });
+    CONFIG.slots.forEach(s=>{ if(day.slots[s.id]) slotHit[s.id]++; });
   });
   const wk = (n/7)||1;
   return `<table class="rules">
@@ -1044,7 +1062,7 @@ function statsBlock(){
     <tr><td>好日子率</td><td style="text-align:right;font-weight:800">${Math.round(sun/n*100)}%</td></tr>
     <tr><td>日均星数</td><td style="text-align:right;font-weight:800">${(star/n).toFixed(1)}</td></tr>
     </table><hr><table class="rules">
-    ${DB.config.slots.map(s=>`<tr><td>${s.icon} ${esc(s.label)}</td>
+    ${CONFIG.slots.map(s=>`<tr><td>${s.icon} ${esc(s.label)}</td>
       <td style="text-align:right;font-weight:800">${Math.round(slotHit[s.id]/n*100)}%</td></tr>`).join('')}
     </table>
     <div class="muted" style="margin-top:10px">
