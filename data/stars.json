@@ -1,88 +1,4 @@
 {
-  "child": {
-    "name": "徐瑾熙",
-    "startDate": "2026-08-10"
-  },
-  "config": {
-    "slots": [
-      {
-        "id": "teeth",
-        "label": "刷牙",
-        "icon": "🪥"
-      },
-      {
-        "id": "sleep",
-        "label": "按时睡觉",
-        "icon": "🛏️"
-      },
-      {
-        "id": "study",
-        "label": "认真学习",
-        "icon": "📖"
-      },
-      {
-        "id": "chore",
-        "label": "帮忙干活",
-        "icon": "🧹"
-      },
-      {
-        "id": "temper",
-        "label": "管好脾气",
-        "icon": "😊"
-      },
-      {
-        "id": "meal",
-        "label": "自己好好吃饭",
-        "icon": "🍚"
-      }
-    ],
-    "sunThreshold": 5,
-    "starRewards": [
-      {
-        "id": "screen",
-        "label": "玩 20 分钟电子设备",
-        "icon": "📱",
-        "cost": 1,
-        "weeklyLimit": 0
-      },
-      {
-        "id": "sunbuy",
-        "label": "补一个太阳",
-        "icon": "☀️",
-        "cost": 20,
-        "weeklyLimit": 1
-      }
-    ],
-    "sunRewards": [
-      {
-        "id": "snack",
-        "label": "零食",
-        "icon": "🍭",
-        "cost": 1,
-        "weeklyLimit": 2
-      }
-    ],
-    "milestones": [
-      {
-        "id": "toy",
-        "label": "玩具",
-        "icon": "🧸",
-        "threshold": 10
-      },
-      {
-        "id": "park",
-        "label": "游乐场",
-        "icon": "🎡",
-        "threshold": 20
-      },
-      {
-        "id": "trip",
-        "label": "旅游",
-        "icon": "✈️",
-        "threshold": 60
-      }
-    ]
-  },
   "days": {
     "2026-08-10": {
       "slots": {
@@ -97,7 +13,7 @@
       "meltdown": true,
       "hit": false,
       "bonus": 0,
-      "settled": true,
+      "bonusSun": false,
       "at": "2026-08-10T14:40:53.990Z"
     },
     "2026-08-09": {
@@ -113,7 +29,7 @@
       "meltdown": false,
       "hit": false,
       "bonus": 0,
-      "settled": true,
+      "bonusSun": false,
       "at": "2026-08-10T13:59:33.582Z"
     }
   },
@@ -124,13 +40,6 @@
     "trip": 0
   },
   "meta": {
-    "savedAt": "2026-08-10T14:40:53.990Z",
-    "fileAt": null,
-    "needsGrant": false
-  },
-  "version": 1,
-  "ui": {
-    "bg": null,
-    "veil": 0
+    "savedAt": "2026-08-10T14:40:53.990Z"
   }
 }
