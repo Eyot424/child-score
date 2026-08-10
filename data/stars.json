@@ -1,0 +1,105 @@
+{
+  "version": 1,
+  "child": {
+    "name": "徐瑾熙",
+    "startDate": "2026-08-10"
+  },
+  "config": {
+    "slots": [
+      {
+        "id": "teeth",
+        "label": "刷牙",
+        "icon": "🪥"
+      },
+      {
+        "id": "sleep",
+        "label": "按时睡觉",
+        "icon": "🛏️"
+      },
+      {
+        "id": "study",
+        "label": "认真学习",
+        "icon": "📖"
+      },
+      {
+        "id": "chore",
+        "label": "帮忙干活",
+        "icon": "🧹"
+      },
+      {
+        "id": "temper",
+        "label": "管好脾气",
+        "icon": "😊"
+      },
+      {
+        "id": "meal",
+        "label": "自己好好吃饭",
+        "icon": "🍚"
+      }
+    ],
+    "sunThreshold": 5,
+    "penaltyEnabled": false,
+    "baselineEndDate": "2026-08-24",
+    "starRewards": [
+      {
+        "id": "screen",
+        "label": "玩 20 分钟电子设备",
+        "icon": "📱",
+        "cost": 1,
+        "weeklyLimit": 0
+      },
+      {
+        "id": "sunbuy",
+        "label": "补一个太阳",
+        "icon": "☀️",
+        "cost": 20,
+        "weeklyLimit": 1
+      }
+    ],
+    "sunRewards": [
+      {
+        "id": "snack",
+        "label": "零食",
+        "icon": "🍭",
+        "cost": 1,
+        "weeklyLimit": 2
+      }
+    ],
+    "milestones": [
+      {
+        "id": "toy",
+        "label": "玩具",
+        "icon": "🧸",
+        "threshold": 10
+      },
+      {
+        "id": "park",
+        "label": "游乐场",
+        "icon": "🎡",
+        "threshold": 20
+      },
+      {
+        "id": "trip",
+        "label": "旅游",
+        "icon": "✈️",
+        "threshold": 60
+      }
+    ]
+  },
+  "days": {},
+  "ledger": [],
+  "fulfilled": {
+    "toy": 0,
+    "park": 0,
+    "trip": 0
+  },
+  "ui": {
+    "bg": null,
+    "veil": 0
+  },
+  "meta": {
+    "savedAt": null,
+    "fileAt": null,
+    "needsGrant": false
+  }
+}
