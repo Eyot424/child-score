@@ -111,6 +111,16 @@ nav button.on{background:var(--yellow)}
 .tally .sun.yes{color:var(--red)}
 .tally .sun.no{color:#8a99a3}
 
+/* 惊喜奖励两行：标签 / 控件 / 说明 三列对齐，控件列定宽保证按钮竖直成线 */
+.bonus{display:grid;grid-template-columns:auto 152px 1fr;gap:14px 16px;align-items:center}
+.bonus .bl{font-size:15px;font-weight:800;white-space:nowrap}
+.bonus .bc{display:flex;align-items:center;gap:10px}
+.bonus .bc b{font-size:24px;font-weight:900;min-width:34px;text-align:center}
+.bonus .bh{font-size:13px;font-weight:600;color:#6b7c86}
+@media(max-width:560px){
+  .bonus{grid-template-columns:auto 1fr;gap:10px 12px}
+  .bonus .bh{grid-column:1/-1;margin-top:-6px}
+}
 .pen{display:flex;gap:12px;flex-wrap:wrap}
 .pen button{
   font:inherit;font-size:14px;font-weight:700;cursor:pointer;
@@ -135,6 +145,7 @@ nav button.on{background:var(--yellow)}
 .cal .cell.today{border-color:var(--blue);border-width:3px;background:#EAF6FE}
 .cal .cell .d{font-size:13px;font-weight:700;color:#74838f}
 .cal .cell .m{font-size:27px;line-height:1}
+.cal .cell .m.two{font-size:16px;letter-spacing:-2px}   /* 挣到的 + 惊喜太阳，一格两个 */
 .cal .cell .s{font-size:14px;font-weight:800;color:var(--blue-d)}
 /* 扣分标记：好日子也要能看出当天发生过什么 */
 .cal .cell .p{position:absolute;top:3px;right:4px;font-size:13px;line-height:1}
@@ -553,7 +564,7 @@ function save(){
    ═════════════════════════════════════ */
 function blankDay(){
   const s={}; DB.config.slots.forEach(x=>s[x.id]=false);
-  return {slots:s, tantrum:false, meltdown:false, hit:false, bonus:0};
+  return {slots:s, tantrum:false, meltdown:false, hit:false, bonus:0, bonusSun:false};
 }
 /* 只读：看一眼不落库。
    否则光是翻日历就会给每一天生成空记录，而复盘报表的好日子率、日均星数
@@ -574,14 +585,20 @@ function settleDay(day){
   let sun = stars >= DB.config.sunThreshold;
   if(day.meltdown || day.hit) sun = false;        // 失控 / 打人 → 当天无太阳
   const sunPenalty = day.hit ? 1 : 0;             // 打人额外扣 1 个已有太阳
-  return {stars, sun, sunPenalty};
+  const bonusSun  = day.bonusSun ? 1 : 0;         // 惊喜太阳：独立于当天有没有挣到
+  return {stars, sun, sunPenalty, bonusSun};
+}
+/* 惊喜太阳每周至多一个 */
+function weekBonusSuns(date){
+  const wk = weekKey(date);
+  return Object.keys(DB.days).filter(d => DB.days[d].bonusSun && weekKey(d) === wk).length;
 }
 function totals(){
   let stars=0, suns=0;
   for(const date of Object.keys(DB.days)){
     const r = settleDay(DB.days[date]);
     stars += r.stars;
-    suns  += (r.sun?1:0) - r.sunPenalty;
+    suns  += (r.sun?1:0) + r.bonusSun - r.sunPenalty;
   }
   for(const e of DB.ledger){ stars += e.stars||0; suns += e.suns||0; }
   return {stars:Math.max(0,stars), suns:Math.max(0,suns)};
@@ -701,12 +718,24 @@ function vToday(){
              font-weight:800;text-align:center">生气可以，失控不行，动手最严重</div>
       </div>
       <div class="card">
-        <h2>惊喜星</h2>
-        <div class="row">
-          <button class="btn sm" onclick="bonus(-1)">−</button>
-          <div style="font-size:26px;font-weight:900;min-width:44px;text-align:center">${day.bonus||0}</div>
-          <button class="btn sm primary" onclick="bonus(1)">＋</button>
-          <span class="muted">清单外的好表现，每周 1~2 次</span>
+        <h2>惊喜奖励</h2>
+        <div class="bonus">
+          <div class="bl">⭐ 惊喜星</div>
+          <div class="bc">
+            <button class="btn sm" onclick="bonus(-1)">−</button>
+            <b>${day.bonus||0}</b>
+            <button class="btn sm primary" onclick="bonus(1)">＋</button>
+          </div>
+          <div class="bh">清单外的好表现，每周 1~2 次</div>
+
+          <div class="bl">☀️ 惊喜太阳</div>
+          <div class="bc">
+            <button class="btn sm ${day.bonusSun?'primary':''}" onclick="bonusSun()"
+              ${(!day.bonusSun && weekBonusSuns(date)>=1) ? 'disabled' : ''}>
+              ${day.bonusSun ? '☀️ 已给' : '给一个'}</button>
+          </div>
+          <div class="bh">${day.bonusSun ? '点一下可以收回'
+            : weekBonusSuns(date)>=1 ? '本周已经给过了' : '每周最多 1 个'}</div>
         </div>
       </div>
       ${nextGoalCard()}
@@ -756,9 +785,20 @@ function tog(f){
 }
 function bonus(n){
   const day = editDay(ST.sel);
+  const before = milestoneState().map(m=>m.earned);
   day.bonus = Math.max(0,(day.bonus||0)+n);
   day.at = stamp();
   save(); render();
+  checkUnlock(before);            // 加星可能把当天推过门槛 → 得太阳 → 解锁里程碑
+}
+function bonusSun(){
+  const day = editDay(ST.sel);
+  if(!day.bonusSun && weekBonusSuns(ST.sel) >= 1){ toast('本周已经给过惊喜太阳了'); return; }
+  const before = milestoneState().map(m=>m.earned);
+  day.bonusSun = !day.bonusSun;
+  day.at = stamp();
+  save(); render();
+  checkUnlock(before);
 }
 function checkUnlock(before){
   const after = milestoneState();
@@ -785,7 +825,9 @@ function vCal(){
     if(rec){
       const r = settleDay(rec);
       star += r.stars; n++;
-      if(r.sun){ sun++; mark = '<span class="d">'+d+'</span><span class="m">☀️</span>'; }
+      const got = (r.sun?1:0) + r.bonusSun;      // 惊喜太阳也要显示出来
+      if(got){ sun += got;
+        mark = '<span class="d">'+d+'</span><span class="m'+(got>1?' two':'')+'">'+'☀️'.repeat(got)+'</span>'; }
       else if(rec.hit) mark = '<span class="d">'+d+'</span><span class="m">💧</span>';
       else if(r.stars) mark = '<span class="d">'+d+'</span><span class="s">'+r.stars+'⭐</span>';
       const icon = rec.hit ? '✋' : rec.meltdown ? '😭' : rec.tantrum ? '😤' : '';   // 只标最重的那一级
