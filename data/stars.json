@@ -15,15 +15,47 @@
       "bonus": 0,
       "bonusSun": false,
       "at": "2026-08-10T14:40:53.990Z"
+    },
+    "2026-08-09": {
+      "slots": {
+        "teeth": false,
+        "sleep": false,
+        "study": false,
+        "chore": false,
+        "temper": false,
+        "meal": false
+      },
+      "tantrum": false,
+      "meltdown": false,
+      "hit": false,
+      "bonus": 0,
+      "bonusSun": false,
+      "at": "2026-08-10T15:53:23.967Z"
+    },
+    "2026-08-04": {
+      "slots": {
+        "teeth": false,
+        "sleep": false,
+        "study": false,
+        "chore": false,
+        "temper": false,
+        "meal": false
+      },
+      "tantrum": false,
+      "meltdown": false,
+      "hit": false,
+      "bonus": 0,
+      "bonusSun": false,
+      "at": "2026-08-10T15:53:29.792Z"
     }
   },
   "ledger": [],
   "fulfilled": {
     "toy": 0,
-    "trip": 0,
-    "big": 0
+    "big": 0,
+    "trip": 0
   },
   "meta": {
-    "savedAt": "2026-08-10T14:40:53.990Z"
+    "savedAt": "2026-08-10T15:53:29.792Z"
   }
 }
