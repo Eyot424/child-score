@@ -3,16 +3,18 @@
 给 6 岁小朋友的行为积分系统。单文件网页，双击打开即用，不需要联网、不需要服务器。
 
 ```
-public/index.html   应用本体（单文件，无依赖，无构建）
-data/stars.json     数据（由应用自动提交，不用手改）
-SYNC.md             多设备同步怎么配
-DESIGN.md           积分规则设计（分值怎么定的、为什么这么定）
-DESIGN-WEB.md       网页方案设计（技术选型、页面结构、数据模型）
+index.html        应用本体（单文件，无依赖，无构建）
+data/stars.json   数据（由应用自动提交，不用手改）
+SYNC.md           多设备同步怎么配
+DESIGN.md         积分规则设计（分值怎么定的、为什么这么定）
+DESIGN-WEB.md     网页方案设计（技术选型、页面结构、数据模型）
 ```
+
+在线版：**https://eyot424.github.io/child-score/**
 
 ## 用法
 
-**双击 `public/index.html`**，用 Chrome 或 Edge 打开。不需要服务器，不需要构建。
+**双击 `index.html`**，用 Chrome 或 Edge 打开。不需要服务器，不需要构建。
 
 ### 想在手机和电脑上共用同一份数据
 

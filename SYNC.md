@@ -57,15 +57,15 @@ git push -u origin master
 
 ## 4 · 其他设备
 
-**电脑**：直接双击 `public/index.html` 就行 —— GitHub API 允许从 `file://` 跨域调用，
+**电脑**：直接双击 `index.html` 就行 —— GitHub API 允许从 `file://` 跨域调用，
 不需要架服务器。每台电脑各填一次配置。
 
-**手机**：需要一个网址。把 `public/` 挂成 GitHub Pages：
-
-仓库 → Settings → Pages → Source 选 `Deploy from a branch` → 分支 `master`、目录 `/public` → Save。
-
-一分钟后得到 `https://你的用户名.github.io/child-score/`，手机浏览器打开，
+**手机**：用 GitHub Pages 的网址 **https://eyot424.github.io/child-score/**，
 在设置里填同样的配置，加到主屏幕当 App 用。
+
+> Pages 已经开好了（分支 `master`、目录 `/`）。
+> 注意分支部署**只能选仓库根目录或 `/docs`**，不支持别的目录 ——
+> index.html 放在根目录就是这个原因。
 
 ---
 
