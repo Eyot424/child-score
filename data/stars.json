@@ -86,7 +86,25 @@
       }
     ]
   },
-  "days": {},
+  "days": {
+    "2026-08-10": {
+      "slots": {
+        "teeth": false,
+        "sleep": false,
+        "study": false,
+        "chore": false,
+        "temper": false,
+        "meal": false
+      },
+      "tantrum": false,
+      "meltdown": false,
+      "hit": false,
+      "bonus": 0,
+      "exempt": false,
+      "settled": false,
+      "at": "2026-08-10T13:53:33.490Z"
+    }
+  },
   "ledger": [],
   "fulfilled": {
     "toy": 0,
@@ -98,7 +116,7 @@
     "veil": 0
   },
   "meta": {
-    "savedAt": null,
+    "savedAt": "2026-08-10T13:53:33.490Z",
     "fileAt": null,
     "needsGrant": false
   }
