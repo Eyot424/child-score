@@ -35,7 +35,7 @@
     "2026-08-12": {
       "slots": {
         "teeth": true,
-        "sleep": false,
+        "sleep": true,
         "study": true,
         "chore": true,
         "temper": false,
@@ -46,16 +46,17 @@
       "hit": false,
       "bonus": 0,
       "bonusSun": false,
-      "at": "2026-08-12T11:03:24.751Z"
+      "at": "2026-08-12T13:04:19.802Z"
     }
   },
   "ledger": [],
   "fulfilled": {
     "toy": 0,
     "big": 0,
-    "trip": 0
+    "trip": 0,
+    "drawToy": 0
   },
   "meta": {
-    "savedAt": "2026-08-12T11:03:24.751Z"
+    "savedAt": "2026-08-12T13:04:19.802Z"
   }
 }
