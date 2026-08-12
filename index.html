@@ -156,14 +156,18 @@ nav button.on{background:var(--yellow)}
 .cal .cell.pen{border-color:var(--pink)}
 
 /* ── 抽奖转盘 ── */
-.wheelbox{position:relative;width:100%;max-width:320px;margin:0 auto 16px;aspect-ratio:1}
-.wheelbox svg{width:100%;height:100%;display:block;filter:drop-shadow(0 4px 0 var(--ink))}
+.wheelbox{position:relative;width:100%;max-width:320px;margin:6px auto 18px;aspect-ratio:1}
+.wheelbox #wheel{width:100%;height:100%;display:block;filter:drop-shadow(0 5px 0 rgba(0,0,0,.22))}
 .wheelbox .ptr{
-  position:absolute;top:-15px;left:50%;transform:translateX(-50%);
-  font-size:34px;line-height:1;color:var(--red);z-index:2;
-  text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 3px #fff;
+  position:absolute;top:-9px;left:50%;transform:translateX(-50%);
+  width:36px;height:31px;z-index:2;
+  filter:drop-shadow(0 2px 0 rgba(0,0,0,.2));
 }
 .drawmsg{font-size:18px;font-weight:800;margin-bottom:16px;min-height:26px}
+@media(max-width:480px){
+  .wheelbox{max-width:270px;margin:4px auto 14px}
+  .drawmsg{font-size:16px;margin-bottom:12px}
+}
 
 /* ── 收集册 ── */
 /* 同样限宽：不限的话 60 格铺满会有 800px 高，孩子要滚半天 */
@@ -392,27 +396,29 @@ const CONFIG = {
   ]
 };
 /* ── 转盘：每周一次 ──
-   权重 = 价值的倒数。1 小玩具 = 10 太阳 = 200 星星，
-   所以权重就是 1 : 10 : 200，每档对期望值的贡献恰好相等（各 200/211 星星）。
+   严格按「几率与价值成反比」应该是 1 : 10 : 200（价值比 200:20:1 取倒数），
+   那样三档对期望值的贡献恰好相等，很优雅 —— 但 94.8% 的结果会是一颗星星，
+   小玩具期望等 4 年。对六岁孩子这就是每周一次的例行失望。
+   所以放宽到 1 : 6 : 40：小玩具约一年一次、太阳约两月一次，反比关系被打破，
+   换来的是转盘真的值得转。
    不做保底、不做伪随机修正 —— 连续中小玩具是允许发生的。 */
 const WHEEL = [
-  {id:'toy',  label:'小玩具',  icon:'🧸', weight:1,   color:'#E60012', text:'#fff'},
-  {id:'sun',  label:'1 个太阳', icon:'☀️', weight:10,  color:'#FFD900', text:'#1A1A1A'},
-  {id:'star', label:'1 个星星', icon:'⭐', weight:200, color:'#7FD0F5', text:'#1A1A1A'}
+  {id:'toy',  label:'小玩具',  icon:'🧸', weight:1,  color:'#F2607A'},
+  {id:'sun',  label:'1 个太阳', icon:'☀️', weight:6,  color:'#FFD900'},
+  {id:'star', label:'1 个星星', icon:'⭐', weight:40, color:'#8FD8F7', color2:'#CFEEFC'}
 ];
-const WHEEL_TOTAL = WHEEL.reduce((n,w)=>n+w.weight,0);          // 211
-/* 环上的排布：把每档拆成几瓣交错开，看着才像个转盘。
-   同一档的总角度平分给它出现的次数，各档角度之和仍严格等于其概率，没有作弊。 */
-const WHEEL_RING = ['star','sun','star','sun','star','toy','star','sun','star','sun','star'];
-/* 每一瓣的起止角度（0° = 12 点方向，顺时针） */
+const WHEEL_TOTAL = WHEEL.reduce((n,w)=>n+w.weight,0);          // 47
+/* 盘面布局：12 等分，纯粹为了好看。
+   面积不代表概率 —— 概率只由上面的 weight 决定：先摇出结果，
+   再让转盘停到对应的那一瓣上。真实几率在页面右边的表里写明。 */
+const WHEEL_RING = ['toy','star','star','sun','star','star','sun','star','star','sun','star','star'];
+/* 每一瓣的起止角度（0° = 12 点方向，顺时针），首瓣居中对准指针 */
 function wheelSlices(){
-  const cnt = {}; WHEEL_RING.forEach(id=>cnt[id]=(cnt[id]||0)+1);
-  let a = 0;
-  return WHEEL_RING.map(id=>{
+  const n = WHEEL_RING.length, deg = 360/n;
+  return WHEEL_RING.map((id,i)=>{
     const w = WHEEL.find(x=>x.id===id);
-    const deg = 360 * (w.weight / cnt[id]) / WHEEL_TOTAL;
-    const s = {...w, a0:a, a1:a+deg, deg};
-    a += deg; return s;
+    return {...w, i, deg, a0:i*deg - deg/2, a1:i*deg + deg/2,
+            fill: id==='star' ? (i%2 ? w.color : w.color2) : w.color};
   });
 }
 const slotById = id => CONFIG.slots.find(s=>s.id===id) || {label:id, icon:''};
@@ -1047,17 +1053,18 @@ function vAlbum(){
 let spinning = false, wheelRot = 0;
 function vDraw(){
   const slices = wheelSlices();
-  const R = 150, C = 160;
+  const R = 142, C = 160;
   const pt = (a,r)=>[C + r*Math.sin(a*Math.PI/180), C - r*Math.cos(a*Math.PI/180)];
   const arc = s => {
     const [x0,y0]=pt(s.a0,R), [x1,y1]=pt(s.a1,R);
-    return `M${C},${C} L${x0.toFixed(2)},${y0.toFixed(2)} A${R},${R} 0 ${s.deg>180?1:0},1 ${x1.toFixed(2)},${y1.toFixed(2)} Z`;
+    return `M${C},${C} L${x0.toFixed(2)},${y0.toFixed(2)} A${R},${R} 0 0,1 ${x1.toFixed(2)},${y1.toFixed(2)} Z`;
   };
   const label = s => {
-    if(s.deg < 20) return '';                    // 太窄的瓣放不下图标
-    const [x,y] = pt((s.a0+s.a1)/2, R*0.66);
-    return `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="middle" dominant-baseline="central" font-size="26">${s.icon}</text>`;
+    const [x,y] = pt((s.a0+s.a1)/2, R*0.70);
+    return `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="middle" dominant-baseline="central" font-size="30">${s.icon}</text>`;
   };
+  const dot = s => { const [x,y] = pt(s.a0, R-9);
+    return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3.4" fill="#fff" stroke="#1A1A1A" stroke-width="1.6"/>`; };
   const done = drawsThisWeek() >= 1, last = lastDraw(), pend = drawToysPending();
 
   el('main').innerHTML = `
@@ -1066,11 +1073,17 @@ function vDraw(){
       <div class="card" style="text-align:center">
         <h2><span style="flex:1;text-align:center">每周一次转盘</span></h2>
         <div class="wheelbox">
-          <div class="ptr">▼</div>
+          <svg class="ptr" viewBox="0 0 40 34">
+            <path d="M20 33 L2 3 A20 20 0 0 1 38 3 Z" fill="#E60012" stroke="#1A1A1A" stroke-width="3.5" stroke-linejoin="round"/>
+          </svg>
           <svg id="wheel" viewBox="0 0 320 320" style="transform:rotate(${wheelRot}deg)">
-            ${slices.map(s=>`<path d="${arc(s)}" fill="${s.color}" stroke="#1A1A1A" stroke-width="1.5"/>`).join('')}
+            <circle cx="${C}" cy="${C}" r="${R+7}" fill="#1A1A1A"/>
+            <circle cx="${C}" cy="${C}" r="${R+3}" fill="#FFD900"/>
+            ${slices.map(s=>`<path d="${arc(s)}" fill="${s.fill}" stroke="#1A1A1A" stroke-width="2"/>`).join('')}
             ${slices.map(label).join('')}
-            <circle cx="${C}" cy="${C}" r="26" fill="#fff" stroke="#1A1A1A" stroke-width="4"/>
+            ${slices.map(dot).join('')}
+            <circle cx="${C}" cy="${C}" r="30" fill="#fff" stroke="#1A1A1A" stroke-width="4"/>
+            <text x="${C}" y="${C}" text-anchor="middle" dominant-baseline="central" font-size="26">🎡</text>
           </svg>
         </div>
         <div id="drawMsg" class="drawmsg">${
@@ -1085,12 +1098,13 @@ function vDraw(){
         <h2>中奖概率</h2>
         <table class="rules">
           ${WHEEL.map(w=>`<tr><td>${w.icon} ${esc(w.label)}</td>
-            <td style="text-align:right;font-weight:800">${(w.weight/WHEEL_TOTAL*100).toFixed(2)}%</td>
+            <td style="text-align:right;font-weight:800">${(w.weight/WHEEL_TOTAL*100).toFixed(1)}%</td>
             <td class="muted" style="text-align:right">约 ${Math.round(WHEEL_TOTAL/w.weight)} 周一次</td></tr>`).join('')}
         </table>
         <div class="muted" style="margin-top:12px">
-          几率和价值成反比（1 小玩具 = 10 太阳 = 200 星星），所以三档对期望值的贡献一样大。
-          <b>没有保底</b>，理论上可以连着中小玩具，也可以一整年都是星星。
+          <b>盘面是 12 等分，只为好看，面积不代表概率</b> —— 真实几率就是上面这张表。
+          没有保底、没有伪随机修正，用的是密码学随机数：
+          理论上可以连着中小玩具，也可以一整年都是星星。
         </div>
       </div>
       ${pend?`<div class="card"><h2>转盘赢的小玩具 🎁</h2>
@@ -1140,8 +1154,9 @@ function spin(){
     DB.ledger.push({id:uid(), at:stamp(), date:todayStr(), type:'draw', prize:win.id,
                     stars: win.id==='star'?1:0, suns: win.id==='sun'?1:0});
     save(); render();
+    const pct = (win.weight/WHEEL_TOTAL*100).toFixed(1);
     celebrate(win.icon, '抽中了 '+win.label+'！',
-      win.id==='toy' ? '0.47% 的运气' : win.id==='sun' ? '4.7% 的运气' : '下周再来');
+      win.id==='star' ? '下周再来' : pct+'% 的运气');
   }, 4400);
 }
 function giveDrawToy(){
