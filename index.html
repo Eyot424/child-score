@@ -155,6 +155,16 @@ nav button.on{background:var(--yellow)}
 .cal .cell .p{position:absolute;top:3px;right:4px;font-size:13px;line-height:1}
 .cal .cell.pen{border-color:var(--pink)}
 
+/* ── 抽奖转盘 ── */
+.wheelbox{position:relative;width:100%;max-width:320px;margin:0 auto 16px;aspect-ratio:1}
+.wheelbox svg{width:100%;height:100%;display:block;filter:drop-shadow(0 4px 0 var(--ink))}
+.wheelbox .ptr{
+  position:absolute;top:-15px;left:50%;transform:translateX(-50%);
+  font-size:34px;line-height:1;color:var(--red);z-index:2;
+  text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 3px #fff;
+}
+.drawmsg{font-size:18px;font-weight:800;margin-bottom:16px;min-height:26px}
+
 /* ── 收集册 ── */
 /* 同样限宽：不限的话 60 格铺满会有 800px 高，孩子要滚半天 */
 .album{display:grid;grid-template-columns:repeat(10,1fr);column-gap:9px;row-gap:26px;
@@ -347,6 +357,7 @@ const VIEWS = [
   {id:'cal',   name:'日历'},
   {id:'album', name:'收集册'},
   {id:'shop',  name:'商店'},
+  {id:'draw',  name:'抽奖'},
   {id:'set',   name:'设置'}
 ];
 const KEY = 'jinxi-stars-v1';
@@ -380,6 +391,30 @@ const CONFIG = {
     {id:'trip', threshold:60, options:[{label:'出国旅游', icon:'✈️'}]}
   ]
 };
+/* ── 转盘：每周一次 ──
+   权重 = 价值的倒数。1 小玩具 = 10 太阳 = 200 星星，
+   所以权重就是 1 : 10 : 200，每档对期望值的贡献恰好相等（各 200/211 星星）。
+   不做保底、不做伪随机修正 —— 连续中小玩具是允许发生的。 */
+const WHEEL = [
+  {id:'toy',  label:'小玩具',  icon:'🧸', weight:1,   color:'#E60012', text:'#fff'},
+  {id:'sun',  label:'1 个太阳', icon:'☀️', weight:10,  color:'#FFD900', text:'#1A1A1A'},
+  {id:'star', label:'1 个星星', icon:'⭐', weight:200, color:'#7FD0F5', text:'#1A1A1A'}
+];
+const WHEEL_TOTAL = WHEEL.reduce((n,w)=>n+w.weight,0);          // 211
+/* 环上的排布：把每档拆成几瓣交错开，看着才像个转盘。
+   同一档的总角度平分给它出现的次数，各档角度之和仍严格等于其概率，没有作弊。 */
+const WHEEL_RING = ['star','sun','star','sun','star','toy','star','sun','star','sun','star'];
+/* 每一瓣的起止角度（0° = 12 点方向，顺时针） */
+function wheelSlices(){
+  const cnt = {}; WHEEL_RING.forEach(id=>cnt[id]=(cnt[id]||0)+1);
+  let a = 0;
+  return WHEEL_RING.map(id=>{
+    const w = WHEEL.find(x=>x.id===id);
+    const deg = 360 * (w.weight / cnt[id]) / WHEEL_TOTAL;
+    const s = {...w, a0:a, a1:a+deg, deg};
+    a += deg; return s;
+  });
+}
 const slotById = id => CONFIG.slots.find(s=>s.id===id) || {label:id, icon:''};
 const msLabel  = m => m.options.map(o=>o.label).join(' 或 ');
 const msIcons  = m => m.options.map(o=>o.icon).join('');
@@ -387,6 +422,7 @@ const msIcons  = m => m.options.map(o=>o.icon).join('');
 /* ── 数据：只有真正需要持久化的四样 ── */
 function defaults(){
   const f = {}; CONFIG.milestones.forEach(m=>f[m.id]=0);
+  f.drawToy = 0;                       // 抽奖赢来的小玩具，已兑现几个
   return { days:{}, ledger:[], fulfilled:f, meta:{ savedAt:null } };
 }
 
@@ -438,9 +474,11 @@ function normalize(d){
     at:     e.at || (e.date||'1970-01-01') + 'T12:00:00.000Z',
     date:   e.date, type: e.type, itemId: e.itemId,
     opt:    e.opt || undefined,          // 二选一里程碑实际给了哪个
+    prize:  e.prize || undefined,        // 抽奖中的是哪档
     stars:  e.stars || 0, suns: e.suns || 0
   }));
   CONFIG.milestones.forEach(m=>{ out.fulfilled[m.id] = Math.max(0, Number(d.fulfilled?.[m.id]) || 0); });
+  out.fulfilled.drawToy = Math.max(0, Number(d.fulfilled?.drawToy) || 0);
   if(d.meta?.savedAt) out.meta.savedAt = d.meta.savedAt;
   return out;
 }
@@ -661,6 +699,25 @@ function settleDay(day){
   const bonusSun  = day.bonusSun ? 1 : 0;         // 惊喜太阳：独立于当天有没有挣到
   return {stars, sun, sunPenalty, bonusSun};
 }
+/* ── 抽奖 ── */
+/* 用 crypto 而不是 Math.random：后者是可预测的伪随机 */
+function rand(){
+  const b = new Uint32Array(1); crypto.getRandomValues(b);
+  return b[0] / 4294967296;
+}
+function drawsThisWeek(date){
+  const wk = weekKey(date || todayStr());
+  return DB.ledger.filter(e=>e.type==='draw' && weekKey(e.date)===wk).length;
+}
+function lastDraw(){
+  const ds = DB.ledger.filter(e=>e.type==='draw');
+  return ds.length ? ds[ds.length-1] : null;
+}
+/* 抽奖赢来的小玩具：赢了多少 vs 已经给了多少 */
+function drawToysPending(){
+  const won = DB.ledger.filter(e=>e.type==='draw' && e.prize==='toy').length;
+  return Math.max(0, won - (DB.fulfilled.drawToy || 0));
+}
 /* 惊喜太阳每周至多一个 */
 function weekBonusSuns(date){
   const wk = weekKey(date);
@@ -702,7 +759,7 @@ function render(){
   el('nav').innerHTML = VIEWS.map(v=>
     `<button class="${ST.view===v.id?'on':''}" onclick="go('${v.id}')">${v.name}</button>`).join('');
 
-  ({today:vToday, cal:vCal, album:vAlbum, shop:vShop, set:vSet})[ST.view]();
+  ({today:vToday, cal:vCal, album:vAlbum, shop:vShop, draw:vDraw, set:vSet})[ST.view]();
   paintStatus();
 }
 /* 数据存哪儿了 —— 永远让用户看得见。同步只有 GitHub 一条路，不给选项 */
@@ -984,6 +1041,112 @@ function vAlbum(){
       ${ms.map(m=>`<div class="chip" style="font-size:14px">${msIcons(m)} 每 ${m.threshold} 个 → ${esc(msLabel(m))}</div>`).join('')}
     </div>
   </div>`;
+}
+
+/* ── 抽奖转盘 ── */
+let spinning = false, wheelRot = 0;
+function vDraw(){
+  const slices = wheelSlices();
+  const R = 150, C = 160;
+  const pt = (a,r)=>[C + r*Math.sin(a*Math.PI/180), C - r*Math.cos(a*Math.PI/180)];
+  const arc = s => {
+    const [x0,y0]=pt(s.a0,R), [x1,y1]=pt(s.a1,R);
+    return `M${C},${C} L${x0.toFixed(2)},${y0.toFixed(2)} A${R},${R} 0 ${s.deg>180?1:0},1 ${x1.toFixed(2)},${y1.toFixed(2)} Z`;
+  };
+  const label = s => {
+    if(s.deg < 20) return '';                    // 太窄的瓣放不下图标
+    const [x,y] = pt((s.a0+s.a1)/2, R*0.66);
+    return `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="middle" dominant-baseline="central" font-size="26">${s.icon}</text>`;
+  };
+  const done = drawsThisWeek() >= 1, last = lastDraw(), pend = drawToysPending();
+
+  el('main').innerHTML = `
+  <div class="grid2">
+    <div>
+      <div class="card" style="text-align:center">
+        <h2><span style="flex:1;text-align:center">每周一次转盘</span></h2>
+        <div class="wheelbox">
+          <div class="ptr">▼</div>
+          <svg id="wheel" viewBox="0 0 320 320" style="transform:rotate(${wheelRot}deg)">
+            ${slices.map(s=>`<path d="${arc(s)}" fill="${s.color}" stroke="#1A1A1A" stroke-width="1.5"/>`).join('')}
+            ${slices.map(label).join('')}
+            <circle cx="${C}" cy="${C}" r="26" fill="#fff" stroke="#1A1A1A" stroke-width="4"/>
+          </svg>
+        </div>
+        <div id="drawMsg" class="drawmsg">${
+          done ? `本周抽过了 · 中的是 ${prizeOf(last).icon} ${esc(prizeOf(last).label)}` : '转起来！'}</div>
+        <button class="btn primary" style="font-size:19px;padding:14px 40px" id="spinBtn"
+          onclick="spin()" ${done?'disabled':''}>${done?'下周一再来':'🎡 抽 奖'}</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="card">
+        <h2>中奖概率</h2>
+        <table class="rules">
+          ${WHEEL.map(w=>`<tr><td>${w.icon} ${esc(w.label)}</td>
+            <td style="text-align:right;font-weight:800">${(w.weight/WHEEL_TOTAL*100).toFixed(2)}%</td>
+            <td class="muted" style="text-align:right">约 ${Math.round(WHEEL_TOTAL/w.weight)} 周一次</td></tr>`).join('')}
+        </table>
+        <div class="muted" style="margin-top:12px">
+          几率和价值成反比（1 小玩具 = 10 太阳 = 200 星星），所以三档对期望值的贡献一样大。
+          <b>没有保底</b>，理论上可以连着中小玩具，也可以一整年都是星星。
+        </div>
+      </div>
+      ${pend?`<div class="card"><h2>转盘赢的小玩具 🎁</h2>
+        <div class="pending"><span style="font-size:30px">🧸</span>
+          <span style="font-size:18px;font-weight:800">小玩具 × ${pend}</span>
+          <button class="btn sm primary" style="margin-left:auto" onclick="giveDrawToy()">已经给她了</button>
+        </div></div>`:''}
+      ${drawHistory()}
+    </div>
+  </div>`;
+}
+function prizeOf(e){ return WHEEL.find(w=>w.id===(e&&e.prize)) || {icon:'', label:''}; }
+function drawHistory(){
+  const ds = DB.ledger.filter(e=>e.type==='draw').slice(-8).reverse();
+  if(!ds.length) return '';
+  return `<div class="card"><h2>抽过的</h2><table class="rules">
+    ${ds.map(e=>{const p=prizeOf(e);
+      return `<tr><td class="muted">${e.date}</td><td>${p.icon} ${esc(p.label)}</td></tr>`;}).join('')}
+  </table></div>`;
+}
+function spin(){
+  if(spinning || drawsThisWeek() >= 1) return;
+  spinning = true;
+  el('spinBtn').disabled = true;
+  el('drawMsg').textContent = '转…';
+
+  // 先摇出结果，再让转盘转到对应那一瓣 —— 动画服从随机数，不是反过来
+  const roll = rand() * WHEEL_TOTAL;
+  let acc = 0, win = WHEEL[WHEEL.length-1];
+  for(const w of WHEEL){ acc += w.weight; if(roll < acc){ win = w; break; } }
+
+  // 该档可能有好几瓣，按角度加权挑一瓣，再在瓣内随机取一点
+  const mine = wheelSlices().filter(s=>s.id===win.id);
+  let t = rand() * mine.reduce((n,s)=>n+s.deg,0), pick = mine[0];
+  for(const s of mine){ if(t < s.deg){ pick = s; break; } t -= s.deg; }
+  const target = pick.a0 + Math.max(0.1, Math.min(pick.deg-0.1, rand()*pick.deg));
+
+  const turns = 6 + Math.floor(rand()*3);
+  const cur = ((wheelRot % 360) + 360) % 360;
+  wheelRot += turns*360 + ((((360 - target) - cur) % 360) + 360) % 360;
+
+  const svg = el('wheel');
+  svg.style.transition = 'transform 4.2s cubic-bezier(.17,.67,.14,1)';
+  requestAnimationFrame(()=>{ svg.style.transform = `rotate(${wheelRot}deg)`; });
+  setTimeout(()=>{
+    spinning = false;
+    DB.ledger.push({id:uid(), at:stamp(), date:todayStr(), type:'draw', prize:win.id,
+                    stars: win.id==='star'?1:0, suns: win.id==='sun'?1:0});
+    save(); render();
+    celebrate(win.icon, '抽中了 '+win.label+'！',
+      win.id==='toy' ? '0.47% 的运气' : win.id==='sun' ? '4.7% 的运气' : '下周再来');
+  }, 4400);
+}
+function giveDrawToy(){
+  DB.fulfilled.drawToy = (DB.fulfilled.drawToy||0) + 1;
+  save(); render(); toast('已记录 ✓');
 }
 
 /* ── 商店 ── */
