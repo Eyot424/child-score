@@ -55,14 +55,14 @@
         "study": true,
         "chore": false,
         "temper": false,
-        "meal": false
+        "meal": true
       },
       "tantrum": false,
       "meltdown": false,
       "hit": false,
       "bonus": 0,
       "bonusSun": false,
-      "at": "2026-08-13T12:42:21.635Z"
+      "at": "2026-08-13T12:42:23.119Z"
     }
   },
   "ledger": [],
@@ -73,6 +73,6 @@
     "drawToy": 0
   },
   "meta": {
-    "savedAt": "2026-08-13T12:42:21.635Z"
+    "savedAt": "2026-08-13T12:42:23.119Z"
   }
 }
