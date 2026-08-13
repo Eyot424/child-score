@@ -54,7 +54,7 @@
         "sleep": false,
         "study": true,
         "chore": false,
-        "temper": false,
+        "temper": true,
         "meal": true
       },
       "tantrum": false,
@@ -62,7 +62,7 @@
       "hit": false,
       "bonus": 0,
       "bonusSun": false,
-      "at": "2026-08-13T12:42:23.119Z"
+      "at": "2026-08-13T12:42:39.613Z"
     }
   },
   "ledger": [],
@@ -73,6 +73,6 @@
     "drawToy": 0
   },
   "meta": {
-    "savedAt": "2026-08-13T12:42:23.119Z"
+    "savedAt": "2026-08-13T12:42:39.613Z"
   }
 }
