@@ -83,6 +83,15 @@
       "prize": "star",
       "stars": 1,
       "suns": 0
+    },
+    {
+      "id": "msrih840jt0yi",
+      "at": "2026-08-13T12:45:39.024Z",
+      "date": "2026-08-13",
+      "type": "redeem",
+      "itemId": "sunbuy",
+      "stars": -20,
+      "suns": 1
     }
   ],
   "fulfilled": {
@@ -92,6 +101,6 @@
     "drawToy": 0
   },
   "meta": {
-    "savedAt": "2026-08-13T12:44:28.050Z"
+    "savedAt": "2026-08-13T12:45:39.024Z"
   }
 }
