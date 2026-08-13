@@ -383,7 +383,8 @@ const CONFIG = {
   sunThreshold:5,
   starRewards:[
     {id:'screen', label:'玩 20 分钟电子设备', icon:'📱', cost:1,  weeklyLimit:0},
-    {id:'sunbuy', label:'补一个太阳',         icon:'☀️', cost:20, weeklyLimit:1}
+    // 不限次数：每天最多 6 颗星本身就是天花板，没有可刷的空间
+    {id:'sunbuy', label:'补一个太阳',         icon:'☀️', cost:20, weeklyLimit:0}
   ],
   sunRewards:[
     {id:'snack',  label:'零食',               icon:'🍭', cost:1,  weeklyLimit:2}
