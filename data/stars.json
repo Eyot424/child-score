@@ -74,6 +74,15 @@
       "itemId": "screen",
       "stars": -1,
       "suns": 0
+    },
+    {
+      "id": "msrifpci828z9",
+      "at": "2026-08-13T12:44:28.050Z",
+      "date": "2026-08-13",
+      "type": "draw",
+      "prize": "star",
+      "stars": 1,
+      "suns": 0
     }
   ],
   "fulfilled": {
@@ -83,6 +92,6 @@
     "drawToy": 0
   },
   "meta": {
-    "savedAt": "2026-08-13T12:43:29.272Z"
+    "savedAt": "2026-08-13T12:44:28.050Z"
   }
 }
