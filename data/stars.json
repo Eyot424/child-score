@@ -65,7 +65,17 @@
       "at": "2026-08-13T12:42:47.451Z"
     }
   },
-  "ledger": [],
+  "ledger": [
+    {
+      "id": "msriefzsmncv1",
+      "at": "2026-08-13T12:43:29.272Z",
+      "date": "2026-08-13",
+      "type": "redeem",
+      "itemId": "screen",
+      "stars": -1,
+      "suns": 0
+    }
+  ],
   "fulfilled": {
     "toy": 0,
     "big": 0,
@@ -73,6 +83,6 @@
     "drawToy": 0
   },
   "meta": {
-    "savedAt": "2026-08-13T12:42:47.451Z"
+    "savedAt": "2026-08-13T12:43:29.272Z"
   }
 }
