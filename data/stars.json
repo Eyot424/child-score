@@ -79,6 +79,22 @@
       "bonus": 0,
       "bonusSun": true,
       "at": "2026-08-14T13:03:25.096Z"
+    },
+    "2026-08-15": {
+      "slots": {
+        "teeth": true,
+        "sleep": true,
+        "study": true,
+        "chore": true,
+        "temper": false,
+        "meal": false
+      },
+      "tantrum": false,
+      "meltdown": false,
+      "hit": false,
+      "bonus": 0,
+      "bonusSun": false,
+      "at": "2026-08-15T14:01:41.649Z"
     }
   },
   "ledger": [
@@ -111,12 +127,13 @@
     }
   ],
   "fulfilled": {
-    "toy": 0,
-    "big": 0,
-    "trip": 0,
-    "drawToy": 0
+    "toyS": 0,
+    "toyM": 0,
+    "toyL": 0,
+    "park": 0,
+    "trip": 0
   },
   "meta": {
-    "savedAt": "2026-08-14T13:03:25.096Z"
+    "savedAt": "2026-08-15T14:01:41.649Z"
   }
 }
