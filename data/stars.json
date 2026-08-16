@@ -108,9 +108,9 @@
       "tantrum": false,
       "meltdown": false,
       "hit": false,
-      "bonus": 0,
+      "bonus": 1,
       "bonusSun": false,
-      "at": "2026-08-16T06:43:17.869Z"
+      "at": "2026-08-16T06:43:29.689Z"
     }
   },
   "ledger": [
@@ -150,6 +150,6 @@
     "trip": 0
   },
   "meta": {
-    "savedAt": "2026-08-16T06:43:17.869Z"
+    "savedAt": "2026-08-16T06:43:29.689Z"
   }
 }
