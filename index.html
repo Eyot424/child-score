@@ -371,6 +371,8 @@ const KEY = 'jinxi-stars-v1';
 const CHILD = '徐瑾熙';
 /* 系统启用日：这天之前不存在记录，也不允许补录 */
 const START = '2026-08-10';
+/* 连续几天没太阳要扣、扣几个 */
+const DROUGHT_DAYS = 4, DROUGHT_COST = 3;
 const CONFIG = {
   slots:[
     {id:'teeth', label:'早晚刷牙',         icon:'🪥'},
@@ -742,7 +744,29 @@ function totals(){
     suns  += (r.sun?1:0) + r.bonusSun - r.sunPenalty;
   }
   for(const e of DB.ledger){ stars += e.stars||0; suns += e.suns||0; }
+  suns -= drought().penalty;
   return {stars:Math.max(0,stars), suns:Math.max(0,suns)};
+}
+
+/* ── 连续没太阳的惩罚 ──
+   连续 DROUGHT_DAYS 天没拿到太阳，扣 DROUGHT_COST 个。
+   每满 4 天扣一次：断了 8 天扣两次。
+
+   两个刻意的取舍：
+   1) 只看有记录的日子。没记录的那天说明不了任何事，
+      不能因为家长忘了录就罚孩子 —— 但它也不会把连续中断。
+   2) 只算今天以前的完整日子。今天还没过完，可能晚上就拿到了。
+      当天的进行中连击只用来提醒，不扣分。
+   和余额一样是派生值，改历史会自动重算。 */
+function drought(){
+  const ds = Object.keys(DB.days).sort().filter(d => d < todayStr());
+  let run = 0, penalty = 0;
+  for(const d of ds){
+    const r = settleDay(DB.days[d]);
+    if((r.sun ? 1 : 0) + r.bonusSun > 0) run = 0;
+    else { run++; if(run % DROUGHT_DAYS === 0) penalty += DROUGHT_COST; }
+  }
+  return {run, penalty};                      // run = 到昨天为止的连续无太阳天数
 }
 function weekSpent(itemId, date){
   const wk = weekKey(date || todayStr());
@@ -843,6 +867,7 @@ function vToday(){
     </div>
 
     <div>
+      ${droughtCard()}
       <div class="card">
         <h2>规则</h2>
         <table class="rules">
@@ -875,6 +900,31 @@ function vToday(){
         </div>
       </div>
       ${nextGoalCard()}
+    </div>
+  </div>`;
+}
+/* 连续没太阳的提醒：断了几天、再断几天要扣 */
+function droughtCard(){
+  const {run} = drought();
+  const today = getDay(todayStr());
+  const rt = settleDay(today);
+  const gotToday = (rt.sun?1:0) + rt.bonusSun > 0;
+  // 今天还能救 —— 今天拿到就归零
+  const live = gotToday ? 0 : run + 1;
+  if(run === 0 && !gotToday) return '';          // 才刚开始，不用吓唬
+  if(run === 0) return '';
+  const left = DROUGHT_DAYS - (live % DROUGHT_DAYS || DROUGHT_DAYS);
+  return `<div class="card" style="border-color:var(--red)">
+    <h2>⚠️ 连续 ${run} 天没有太阳</h2>
+    <div style="font-size:17px;font-weight:800;line-height:1.6">
+      ${gotToday
+        ? `今天拿到了 ☀️ —— <span style="color:var(--red)">连续记录已经清零</span>`
+        : left === 0
+          ? `<span style="color:var(--red)">今天再没有，就要扣 ${DROUGHT_COST} 个太阳</span>`
+          : `再有 ${left} 天没太阳，就要扣 ${DROUGHT_COST} 个太阳`}
+    </div>
+    <div class="muted" style="margin-top:10px">
+      连续 ${DROUGHT_DAYS} 天没拿到太阳扣 ${DROUGHT_COST} 个。任何一天拿到太阳，连续记录就归零。
     </div>
   </div>`;
 }
@@ -983,6 +1033,7 @@ function vCal(){
       <div class="chip" style="font-size:15px">本月 ☀️ ${sun}</div>
       <div class="chip" style="font-size:15px">日均 ⭐ ${n?(star/n).toFixed(1):'0.0'}</div>
       ${penDays?`<div class="chip" style="font-size:15px">扣分 ${penDays} 天</div>`:''}
+      ${drought().penalty?`<div class="chip" style="font-size:15px">断更扣 ${drought().penalty} ☀️</div>`:''}
       <span class="muted">😤 小脾气 · 😭 情绪失控 · ✋ 打人　（${cnDate(START).replace(/ 星期./,'')} 起可补录）</span>
     </div>
   </div>
