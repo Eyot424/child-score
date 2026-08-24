@@ -916,22 +916,24 @@ function vToday(){
 /* 连续没太阳的提醒：断了几天、再断几天要扣 */
 function droughtCard(){
   const {run} = drought();
-  const today = getDay(todayStr());
-  const rt = settleDay(today);
-  const gotToday = (rt.sun?1:0) + rt.bonusSun > 0;
-  // 今天还能救 —— 今天拿到就归零
-  const live = gotToday ? 0 : run + 1;
-  if(run === 0 && !gotToday) return '';          // 才刚开始，不用吓唬
   if(run === 0) return '';
-  const left = DROUGHT_DAYS - (live % DROUGHT_DAYS || DROUGHT_DAYS);
+  const rt = settleDay(getDay(todayStr()));
+  const gotToday = (rt.sun ? 1 : 0) + rt.bonusSun > 0;
+
+  /* 倒计时必须和标题同一个基准。
+     标题的 run 数的是「已经过完的日子」—— 今天不算，因为今天还可能拿到。
+     所以还差几天也要从 run 算：连续 2 天 → 还差 2 天（今天 + 明天）。
+     早先用 run+1 把今天当成已经失败，报出「连续 2 天 / 再有 1 天」，两个数对不上。 */
+  const left = DROUGHT_DAYS - (run % DROUGHT_DAYS);   // run 是 4 的倍数时 → 4，正好是刚扣完重新数
+
   return `<div class="card" style="border-color:var(--red)">
     <h2>⚠️ 连续 ${run} 天没有太阳</h2>
     <div style="font-size:17px;font-weight:800;line-height:1.6">
       ${gotToday
         ? `今天拿到了 ☀️ —— <span style="color:var(--red)">连续记录已经清零</span>`
-        : left === 0
+        : left === 1
           ? `<span style="color:var(--red)">今天再没有，就要扣 ${DROUGHT_COST} 个太阳</span>`
-          : `再有 ${left} 天没太阳，就要扣 ${DROUGHT_COST} 个太阳`}
+          : `再有 ${left} 天没太阳，就要扣 ${DROUGHT_COST} 个太阳<span class="muted">（今天算 1 天）</span>`}
     </div>
     <div class="muted" style="margin-top:10px">
       连续 ${DROUGHT_DAYS} 天没拿到太阳扣 ${DROUGHT_COST} 个。任何一天拿到太阳，连续记录就归零。
