@@ -322,6 +322,14 @@
       "prize": "sun",
       "stars": 0,
       "suns": 1
+    },
+    {
+      "id": "mt77t8ib9zm48",
+      "at": "2026-08-24T12:31:22.451Z",
+      "date": "2026-08-24",
+      "type": "redeem",
+      "itemId": "screen",
+      "stars": -1
     }
   ],
   "fulfilled": {
@@ -332,6 +340,6 @@
     "trip": 0
   },
   "meta": {
-    "savedAt": "2026-08-24T12:29:42.214Z"
+    "savedAt": "2026-08-24T12:31:22.451Z"
   }
 }
