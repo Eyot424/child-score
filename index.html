@@ -62,7 +62,13 @@ nav button.on{background:var(--yellow)}
 .grid2{display:grid;grid-template-columns:1.15fr .85fr;gap:22px}
 .grid2 > div{display:flex;flex-direction:column;gap:22px}
 .grid2 > div > .card{margin-bottom:0}
-.grid2 > div > .card:last-child{flex:1}
+/* 每栏最后一张卡吃掉余量，并把内容竖直居中 ——
+   否则多出来的高度全堆在底部，看着像卡片没画完。
+   所以左栏也拆成两张：被拉伸的永远是一张小卡（惊喜/目标），
+   而不是「今天录入」那种一长串内容的卡。 */
+.grid2 > div > .card:last-child{flex:1;display:flex;flex-direction:column;justify-content:center}
+.ladder td{padding:7px 8px}
+.ladder tr.far td{opacity:.5}
 @media(max-width:900px){.grid2{grid-template-columns:1fr}}
 
 /* ── 按钮 ── */
@@ -141,6 +147,7 @@ nav button.on{background:var(--yellow)}
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
   cursor:pointer;transition:.12s;background:#fff;
   min-width:0;                      /* 同 .acell：不加的话图标会把格子撑破容器 */
+  position:relative;                /* 扣分标记 .p 靠它定位，少了就飞到页面角上 */
 }
 .cal .cell:hover{border-color:var(--blue)}
 .cal .cell.pad{border:none;background:none;cursor:default}
@@ -863,6 +870,29 @@ function vToday(){
         ${lock ? `<div class="muted" style="margin-top:12px">🔒 ${
           date < START ? cnDate(START)+' 才开始用这套系统，之前的日子不记录'
                        : '还没到这一天'}</div>` : ''}
+
+      </div>
+
+      <div class="card">
+        <h2>额外给点什么</h2>
+        <div class="bonus">
+          <div class="bl">⭐ 惊喜星</div>
+          <div class="bc">
+            <button class="btn sm" onclick="bonus(-1)" ${lock?'disabled':''}>−</button>
+            <b>${day.bonus||0}</b>
+            <button class="btn sm primary" onclick="bonus(1)" ${lock?'disabled':''}>＋</button>
+          </div>
+          <div class="bh">清单外的好表现，每周 1~2 次</div>
+
+          <div class="bl">☀️ 惊喜太阳</div>
+          <div class="bc">
+            <button class="btn sm ${day.bonusSun?'primary':''}" onclick="bonusSun()"
+              ${(lock || (!day.bonusSun && weekBonusSuns(date)>=1)) ? 'disabled' : ''}>
+              ${day.bonusSun ? '☀️ 已给' : '给一个'}</button>
+          </div>
+          <div class="bh">${day.bonusSun ? '点一下可以收回'
+            : weekBonusSuns(date)>=1 ? '本周已经给过了' : '每周最多 1 个'}</div>
+        </div>
       </div>
     </div>
 
@@ -874,30 +904,10 @@ function vToday(){
           <tr><td>😤 小脾气</td><td class="muted">「${esc(slotById('temper').label)}」那颗星拿不到</td></tr>
           <tr><td>😭 情绪失控</td><td class="muted">当天没有太阳，星星保留</td></tr>
           <tr><td>✋ 打人</td><td class="muted">当天星星清零，再扣 1 个太阳</td></tr>
+          <tr><td>📉 连续 ${DROUGHT_DAYS} 天没太阳</td><td class="muted">扣 ${DROUGHT_COST} 个太阳，拿到一次就归零</td></tr>
         </table>
         <div style="margin-top:14px;padding:12px;background:#EAF6FE;border-radius:12px;
              font-weight:800;text-align:center">生气可以，失控不行，动手最严重</div>
-      </div>
-      <div class="card">
-        <h2>惊喜奖励</h2>
-        <div class="bonus">
-          <div class="bl">⭐ 惊喜星</div>
-          <div class="bc">
-            <button class="btn sm" onclick="bonus(-1)">−</button>
-            <b>${day.bonus||0}</b>
-            <button class="btn sm primary" onclick="bonus(1)">＋</button>
-          </div>
-          <div class="bh">清单外的好表现，每周 1~2 次</div>
-
-          <div class="bl">☀️ 惊喜太阳</div>
-          <div class="bc">
-            <button class="btn sm ${day.bonusSun?'primary':''}" onclick="bonusSun()"
-              ${(!day.bonusSun && weekBonusSuns(date)>=1) ? 'disabled' : ''}>
-              ${day.bonusSun ? '☀️ 已给' : '给一个'}</button>
-          </div>
-          <div class="bh">${day.bonusSun ? '点一下可以收回'
-            : weekBonusSuns(date)>=1 ? '本周已经给过了' : '每周最多 1 个'}</div>
-        </div>
       </div>
       ${nextGoalCard()}
     </div>
@@ -931,14 +941,23 @@ function droughtCard(){
 function nextGoalCard(){
   const {suns} = totals();
   const t = nextTier(suns);
-  if(!t) return `<div class="card"><h2>下一个目标</h2>
-    <div style="font-size:20px;font-weight:900;text-align:center;padding:8px 0">
-      ✈️ 已经攒够出国旅游了！</div></div>`;
+  const head = t
+    ? `${t.icon} 还差 ${t.cost - suns} 个太阳<br>
+       <span style="font-size:15px;color:#6b7c86">就能换${esc(t.label)}</span>`
+    : `✈️ 已经攒够出国旅游了！`;
+  // 顺带把整张价目阶梯摆出来 —— 看得见「再忍一忍能换到什么」，
+  // 比只报下一档更能撑住「攒」这件事
+  const ladder = CONFIG.sunRewards.map(x=>{
+    const ok = suns >= x.cost;
+    return `<tr class="${ok?'':'far'}">
+      <td>${x.icon} ${esc(x.label)}</td>
+      <td style="text-align:right;font-weight:800">${x.cost} ☀️</td>
+      <td style="text-align:right" class="muted">${ok ? '✓ 够了' : '差 '+(x.cost-suns)}</td></tr>`;
+  }).join('');
   return `<div class="card"><h2>下一个目标</h2>
-    <div style="font-size:22px;font-weight:900;text-align:center;padding:8px 0">
-      ${t.icon} 还差 ${t.cost - suns} 个太阳<br>
-      <span style="font-size:15px;color:#6b7c86">就能换${esc(t.label)}</span>
-    </div></div>`;
+    <div style="font-size:22px;font-weight:900;text-align:center;padding:4px 0 14px">${head}</div>
+    <table class="rules ladder">${ladder}</table>
+  </div>`;
 }
 
 /* 太阳没拿到，得说清楚是「星星不够」还是「被扣分挡了」——
