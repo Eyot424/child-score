@@ -479,6 +479,15 @@
       "itemId": "screen",
       "stars": -1,
       "suns": 0
+    },
+    {
+      "id": "mth5lb3muiye3",
+      "at": "2026-08-31T11:26:55.090Z",
+      "date": "2026-08-31",
+      "type": "redeem",
+      "itemId": "snack",
+      "stars": 0,
+      "suns": -1
     }
   ],
   "fulfilled": {
@@ -489,6 +498,6 @@
     "trip": 0
   },
   "meta": {
-    "savedAt": "2026-08-31T11:24:48.730Z"
+    "savedAt": "2026-08-31T11:26:55.090Z"
   }
 }
