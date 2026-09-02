@@ -372,7 +372,7 @@
       "slots": {
         "teeth": false,
         "sleep": false,
-        "study": false,
+        "study": true,
         "chore": true,
         "temper": true,
         "meal": false
@@ -382,7 +382,7 @@
       "hit": false,
       "bonus": 0,
       "bonusSun": false,
-      "at": "2026-09-02T09:59:47.298Z"
+      "at": "2026-09-02T09:59:53.282Z"
     }
   },
   "ledger": [
@@ -554,7 +554,8 @@
       "date": "2026-09-02",
       "type": "redeem",
       "itemId": "screen",
-      "stars": -1
+      "stars": -1,
+      "suns": 0
     }
   ],
   "fulfilled": {
@@ -565,6 +566,6 @@
     "trip": 0
   },
   "meta": {
-    "savedAt": "2026-09-02T09:59:47.298Z"
+    "savedAt": "2026-09-02T09:59:53.283Z"
   }
 }
