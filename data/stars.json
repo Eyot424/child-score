@@ -631,6 +631,15 @@
       "date": "2026-09-05",
       "type": "redeem",
       "itemId": "screen",
+      "stars": -1,
+      "suns": 0
+    },
+    {
+      "id": "mtpa8pzig8bx1",
+      "at": "2026-09-06T03:59:15.342Z",
+      "date": "2026-09-06",
+      "type": "redeem",
+      "itemId": "screen",
       "stars": -1
     }
   ],
@@ -642,6 +651,6 @@
     "trip": 0
   },
   "meta": {
-    "savedAt": "2026-09-05T07:52:41.120Z"
+    "savedAt": "2026-09-06T03:59:15.346Z"
   }
 }
