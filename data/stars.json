@@ -699,7 +699,17 @@
       "date": "2026-09-07",
       "type": "redeem",
       "itemId": "snack",
+      "stars": 0,
       "suns": -1
+    },
+    {
+      "id": "mtraf6jckbozx",
+      "at": "2026-09-07T13:39:49.080Z",
+      "date": "2026-09-07",
+      "type": "redeem",
+      "itemId": "screen",
+      "stars": -1,
+      "suns": 0
     }
   ],
   "fulfilled": {
@@ -710,6 +720,6 @@
     "trip": 0
   },
   "meta": {
-    "savedAt": "2026-09-07T13:39:46.003Z"
+    "savedAt": "2026-09-07T13:39:49.080Z"
   }
 }
