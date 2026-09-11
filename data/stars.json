@@ -837,6 +837,15 @@
       "itemId": "screen",
       "stars": -1,
       "suns": 0
+    },
+    {
+      "id": "mtww77xnyw8yp",
+      "at": "2026-09-11T11:48:20.075Z",
+      "date": "2026-09-11",
+      "type": "redeem",
+      "itemId": "screen",
+      "stars": -1,
+      "suns": 0
     }
   ],
   "fulfilled": {
@@ -847,6 +856,6 @@
     "trip": 0
   },
   "meta": {
-    "savedAt": "2026-09-11T11:47:37.545Z"
+    "savedAt": "2026-09-11T11:48:20.075Z"
   }
 }
