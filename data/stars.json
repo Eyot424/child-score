@@ -869,17 +869,18 @@
       "date": "2026-09-12",
       "type": "redeem",
       "itemId": "toyM",
+      "stars": 0,
       "suns": -10
     }
   ],
   "fulfilled": {
     "toyS": 0,
-    "toyM": 0,
+    "toyM": 1,
     "toyL": 0,
     "park": 0,
     "trip": 0
   },
   "meta": {
-    "savedAt": "2026-09-12T14:36:18.283Z"
+    "savedAt": "2026-09-12T14:36:22.357Z"
   }
 }
