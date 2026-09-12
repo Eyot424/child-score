@@ -862,6 +862,14 @@
       "itemId": "screen",
       "stars": -1,
       "suns": 0
+    },
+    {
+      "id": "mtyhn2zvmk5ne",
+      "at": "2026-09-12T14:36:18.283Z",
+      "date": "2026-09-12",
+      "type": "redeem",
+      "itemId": "toyM",
+      "suns": -10
     }
   ],
   "fulfilled": {
@@ -872,6 +880,6 @@
     "trip": 0
   },
   "meta": {
-    "savedAt": "2026-09-12T14:35:58.852Z"
+    "savedAt": "2026-09-12T14:36:18.283Z"
   }
 }
