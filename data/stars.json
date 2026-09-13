@@ -541,8 +541,8 @@
       "meltdown": true,
       "hit": false,
       "bonus": 0,
-      "bonusSun": false,
-      "at": "2026-09-13T12:47:20.151Z"
+      "bonusSun": true,
+      "at": "2026-09-13T12:47:23.326Z"
     }
   },
   "ledger": [
@@ -897,6 +897,6 @@
     "trip": 0
   },
   "meta": {
-    "savedAt": "2026-09-13T12:47:20.151Z"
+    "savedAt": "2026-09-13T12:47:23.326Z"
   }
 }
