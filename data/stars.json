@@ -582,15 +582,15 @@
         "sleep": false,
         "study": true,
         "chore": true,
-        "temper": true,
+        "temper": false,
         "meal": true
       },
       "tantrum": false,
-      "meltdown": false,
+      "meltdown": true,
       "hit": false,
       "bonus": 0,
       "bonusSun": false,
-      "at": "2026-09-16T14:03:30.580Z"
+      "at": "2026-09-16T14:24:46.428Z"
     }
   },
   "ledger": [
@@ -954,6 +954,6 @@
     "trip": 0
   },
   "meta": {
-    "savedAt": "2026-09-16T14:03:30.580Z"
+    "savedAt": "2026-09-16T14:24:46.428Z"
   }
 }
