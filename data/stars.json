@@ -597,7 +597,7 @@
         "teeth": true,
         "sleep": false,
         "study": true,
-        "chore": false,
+        "chore": true,
         "temper": true,
         "meal": true
       },
@@ -606,7 +606,7 @@
       "hit": false,
       "bonus": 0,
       "bonusSun": false,
-      "at": "2026-09-17T13:26:13.413Z"
+      "at": "2026-09-17T13:26:15.783Z"
     }
   },
   "ledger": [
@@ -970,6 +970,6 @@
     "trip": 0
   },
   "meta": {
-    "savedAt": "2026-09-17T13:26:13.413Z"
+    "savedAt": "2026-09-17T13:26:15.783Z"
   }
 }
