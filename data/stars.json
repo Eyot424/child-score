@@ -617,12 +617,12 @@
         "temper": false,
         "meal": false
       },
-      "tantrum": false,
+      "tantrum": true,
       "meltdown": false,
       "hit": false,
       "bonus": 0,
       "bonusSun": false,
-      "at": "2026-09-18T15:02:08.875Z"
+      "at": "2026-09-18T15:02:18.973Z"
     }
   },
   "ledger": [
@@ -1004,6 +1004,6 @@
     "trip": 0
   },
   "meta": {
-    "savedAt": "2026-09-18T15:02:08.875Z"
+    "savedAt": "2026-09-18T15:02:18.973Z"
   }
 }
