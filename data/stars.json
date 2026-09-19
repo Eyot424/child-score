@@ -628,7 +628,7 @@
       "slots": {
         "teeth": true,
         "sleep": false,
-        "study": false,
+        "study": true,
         "chore": false,
         "temper": false,
         "meal": false
@@ -638,7 +638,7 @@
       "hit": false,
       "bonus": 0,
       "bonusSun": false,
-      "at": "2026-09-19T14:37:35.557Z"
+      "at": "2026-09-19T14:37:39.643Z"
     }
   },
   "ledger": [
@@ -1029,6 +1029,6 @@
     "trip": 0
   },
   "meta": {
-    "savedAt": "2026-09-19T14:37:35.559Z"
+    "savedAt": "2026-09-19T14:37:39.643Z"
   }
 }
