@@ -707,7 +707,7 @@
     "2026-09-24": {
       "slots": {
         "teeth": true,
-        "sleep": false,
+        "sleep": true,
         "study": true,
         "chore": false,
         "temper": true,
@@ -718,7 +718,7 @@
       "hit": false,
       "bonus": 0,
       "bonusSun": false,
-      "at": "2026-09-25T01:47:16.303Z"
+      "at": "2026-09-25T01:47:39.378Z"
     }
   },
   "ledger": [
@@ -1127,6 +1127,6 @@
     "trip": 0
   },
   "meta": {
-    "savedAt": "2026-09-25T01:47:16.303Z"
+    "savedAt": "2026-09-25T01:47:39.378Z"
   }
 }
