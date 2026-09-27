@@ -1201,6 +1201,15 @@
       "date": "2026-09-27",
       "type": "redeem",
       "itemId": "screen",
+      "stars": -1,
+      "suns": 0
+    },
+    {
+      "id": "mujpvzjemef59",
+      "at": "2026-09-27T11:10:20.330Z",
+      "date": "2026-09-27",
+      "type": "redeem",
+      "itemId": "screen",
       "stars": -1
     }
   ],
@@ -1212,6 +1221,6 @@
     "trip": 0
   },
   "meta": {
-    "savedAt": "2026-09-27T10:41:18.927Z"
+    "savedAt": "2026-09-27T11:10:20.331Z"
   }
 }
