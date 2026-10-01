@@ -783,6 +783,22 @@
       "bonus": 0,
       "bonusSun": false,
       "at": "2026-09-28T12:54:24.034Z"
+    },
+    "2026-09-29": {
+      "slots": {
+        "teeth": true,
+        "sleep": false,
+        "study": true,
+        "chore": false,
+        "temper": false,
+        "meal": false
+      },
+      "tantrum": false,
+      "meltdown": false,
+      "hit": false,
+      "bonus": 0,
+      "bonusSun": false,
+      "at": "2026-10-01T14:35:35.475Z"
     }
   },
   "ledger": [
@@ -1281,6 +1297,6 @@
     "trip": 0
   },
   "meta": {
-    "savedAt": "2026-09-28T12:54:24.034Z"
+    "savedAt": "2026-10-01T14:35:35.475Z"
   }
 }
