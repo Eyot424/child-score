@@ -985,12 +985,12 @@
         "temper": false,
         "meal": true
       },
-      "tantrum": false,
+      "tantrum": true,
       "meltdown": false,
       "hit": false,
       "bonus": 0,
       "bonusSun": false,
-      "at": "2026-10-13T14:04:41.704Z"
+      "at": "2026-10-13T14:05:14.551Z"
     },
     "2026-10-13": {
       "slots": {
@@ -1568,6 +1568,6 @@
     "trip": 0
   },
   "meta": {
-    "savedAt": "2026-10-13T14:05:04.555Z"
+    "savedAt": "2026-10-13T14:05:14.551Z"
   }
 }
