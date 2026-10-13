@@ -989,8 +989,8 @@
       "meltdown": false,
       "hit": false,
       "bonus": 0,
-      "bonusSun": false,
-      "at": "2026-10-13T14:05:14.551Z"
+      "bonusSun": true,
+      "at": "2026-10-13T14:05:17.194Z"
     },
     "2026-10-13": {
       "slots": {
@@ -1568,6 +1568,6 @@
     "trip": 0
   },
   "meta": {
-    "savedAt": "2026-10-13T14:05:14.551Z"
+    "savedAt": "2026-10-13T14:05:17.194Z"
   }
 }
