@@ -1212,9 +1212,9 @@
       "tantrum": false,
       "meltdown": false,
       "hit": false,
-      "bonus": 0,
+      "bonus": 2,
       "bonusSun": false,
-      "at": "2026-10-27T10:45:37.678Z"
+      "at": "2026-10-27T10:45:41.802Z"
     }
   },
   "ledger": [
@@ -1947,6 +1947,6 @@
     "trip": 0
   },
   "meta": {
-    "savedAt": "2026-10-27T10:45:37.678Z"
+    "savedAt": "2026-10-27T10:45:41.802Z"
   }
 }
