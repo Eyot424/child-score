@@ -1222,7 +1222,7 @@
         "sleep": false,
         "study": true,
         "chore": true,
-        "temper": false,
+        "temper": true,
         "meal": true
       },
       "tantrum": false,
@@ -1230,7 +1230,7 @@
       "hit": false,
       "bonus": 0,
       "bonusSun": false,
-      "at": "2026-10-29T13:01:34.219Z"
+      "at": "2026-10-29T13:01:35.168Z"
     }
   },
   "ledger": [
@@ -1963,6 +1963,6 @@
     "trip": 0
   },
   "meta": {
-    "savedAt": "2026-10-29T13:01:34.219Z"
+    "savedAt": "2026-10-29T13:01:35.168Z"
   }
 }
