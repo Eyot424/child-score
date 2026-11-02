@@ -1303,14 +1303,14 @@
         "study": true,
         "chore": false,
         "temper": true,
-        "meal": false
+        "meal": true
       },
       "tantrum": false,
       "meltdown": false,
       "hit": false,
       "bonus": 0,
       "bonusSun": false,
-      "at": "2026-11-02T12:35:48.696Z"
+      "at": "2026-11-02T12:35:50.620Z"
     },
     "2026-11-01": {
       "slots": {
@@ -2095,6 +2095,6 @@
     "trip": 0
   },
   "meta": {
-    "savedAt": "2026-11-02T12:35:48.696Z"
+    "savedAt": "2026-11-02T12:35:50.620Z"
   }
 }
