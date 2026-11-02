@@ -1299,10 +1299,10 @@
     "2026-11-02": {
       "slots": {
         "teeth": true,
-        "sleep": false,
-        "study": false,
+        "sleep": true,
+        "study": true,
         "chore": false,
-        "temper": false,
+        "temper": true,
         "meal": false
       },
       "tantrum": false,
@@ -1310,7 +1310,7 @@
       "hit": false,
       "bonus": 0,
       "bonusSun": false,
-      "at": "2026-11-02T12:35:26.700Z"
+      "at": "2026-11-02T12:35:48.696Z"
     },
     "2026-11-01": {
       "slots": {
@@ -2095,6 +2095,6 @@
     "trip": 0
   },
   "meta": {
-    "savedAt": "2026-11-02T12:35:43.018Z"
+    "savedAt": "2026-11-02T12:35:48.696Z"
   }
 }
