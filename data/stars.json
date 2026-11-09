@@ -1399,14 +1399,30 @@
         "study": true,
         "chore": false,
         "temper": true,
-        "meal": false
+        "meal": true
       },
       "tantrum": false,
       "meltdown": false,
       "hit": false,
       "bonus": 0,
       "bonusSun": false,
-      "at": "2026-11-09T01:56:44.419Z"
+      "at": "2026-11-09T01:56:46.304Z"
+    },
+    "2026-11-08": {
+      "slots": {
+        "teeth": true,
+        "sleep": true,
+        "study": true,
+        "chore": false,
+        "temper": true,
+        "meal": true
+      },
+      "tantrum": false,
+      "meltdown": false,
+      "hit": false,
+      "bonus": 0,
+      "bonusSun": false,
+      "at": "2026-11-09T01:56:49.038Z"
     }
   },
   "ledger": [
@@ -2175,6 +2191,6 @@
     "trip": 0
   },
   "meta": {
-    "savedAt": "2026-11-09T01:56:44.419Z"
+    "savedAt": "2026-11-09T01:56:49.038Z"
   }
 }
