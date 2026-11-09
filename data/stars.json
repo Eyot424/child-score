@@ -1370,11 +1370,11 @@
         "meal": false
       },
       "tantrum": false,
-      "meltdown": false,
+      "meltdown": true,
       "hit": false,
       "bonus": 0,
       "bonusSun": false,
-      "at": "2026-11-09T01:56:21.767Z"
+      "at": "2026-11-09T01:56:25.031Z"
     }
   },
   "ledger": [
@@ -2143,6 +2143,6 @@
     "trip": 0
   },
   "meta": {
-    "savedAt": "2026-11-09T01:56:21.770Z"
+    "savedAt": "2026-11-09T01:56:25.031Z"
   }
 }
