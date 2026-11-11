@@ -1445,7 +1445,7 @@
         "teeth": true,
         "sleep": false,
         "study": true,
-        "chore": false,
+        "chore": true,
         "temper": false,
         "meal": true
       },
@@ -1454,7 +1454,7 @@
       "hit": false,
       "bonus": 0,
       "bonusSun": false,
-      "at": "2026-11-11T12:46:21.255Z"
+      "at": "2026-11-11T13:08:58.188Z"
     },
     "2026-11-11": {
       "slots": {
@@ -2374,6 +2374,6 @@
     "trip": 0
   },
   "meta": {
-    "savedAt": "2026-11-11T13:08:44.412Z"
+    "savedAt": "2026-11-11T13:08:58.188Z"
   }
 }
