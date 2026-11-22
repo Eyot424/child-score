@@ -1615,6 +1615,38 @@
       "bonus": 0,
       "bonusSun": false,
       "at": "2026-11-22T07:37:56.713Z"
+    },
+    "2026-11-21": {
+      "slots": {
+        "teeth": true,
+        "sleep": false,
+        "study": true,
+        "chore": false,
+        "temper": true,
+        "meal": true
+      },
+      "tantrum": false,
+      "meltdown": false,
+      "hit": false,
+      "bonus": 0,
+      "bonusSun": false,
+      "at": "2026-11-22T07:37:59.441Z"
+    },
+    "2026-11-22": {
+      "slots": {
+        "teeth": true,
+        "sleep": true,
+        "study": true,
+        "chore": false,
+        "temper": true,
+        "meal": true
+      },
+      "tantrum": false,
+      "meltdown": false,
+      "hit": false,
+      "bonus": 0,
+      "bonusSun": false,
+      "at": "2026-11-22T07:38:01.920Z"
     }
   },
   "ledger": [
@@ -2527,6 +2559,6 @@
     "trip": 0
   },
   "meta": {
-    "savedAt": "2026-11-22T07:37:56.713Z"
+    "savedAt": "2026-11-22T07:38:01.920Z"
   }
 }
